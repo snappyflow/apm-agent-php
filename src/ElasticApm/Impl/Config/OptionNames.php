@@ -56,4 +56,5 @@ final class OptionNames
     public const TRANSACTION_SAMPLE_RATE = 'transaction_sample_rate';
     public const URL_GROUPS = 'url_groups';
     public const VERIFY_SERVER_CERT = 'verify_server_cert';
+    public const GLOBAL_LABELS = 'global_labels';
 }

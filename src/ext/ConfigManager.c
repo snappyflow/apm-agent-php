@@ -593,6 +593,7 @@ ELASTIC_APM_DEFINE_FIELD_ACCESS_FUNCS( stringValue, transactionMaxSpans )
 ELASTIC_APM_DEFINE_FIELD_ACCESS_FUNCS( stringValue, transactionSampleRate )
 ELASTIC_APM_DEFINE_FIELD_ACCESS_FUNCS( stringValue, urlGroups )
 ELASTIC_APM_DEFINE_FIELD_ACCESS_FUNCS( boolValue, verifyServerCert )
+ELASTIC_APM_DEFINE_FIELD_ACCESS_FUNCS( stringValue, globalLabels )
 
 #undef ELASTIC_APM_DEFINE_FIELD_ACCESS_FUNCS
 #undef ELASTIC_APM_DEFINE_ENUM_FIELD_ACCESS_FUNCS
@@ -849,6 +850,12 @@ static void initOptionsMetadata( OptionMetadata* optsMeta )
             verifyServerCert,
             ELASTIC_APM_CFG_OPT_NAME_VERIFY_SERVER_CERT,
             /* defaultValue: */ true );
+
+    ELASTIC_APM_INIT_METADATA(
+            buildStringOptionMetadata,
+            globalLabels,
+            ELASTIC_APM_CFG_OPT_NAME_GLOBAL_LABELS,
+            /* defaultValue: */ NULL );
 
     ELASTIC_APM_ASSERT_EQ_UINT64( i, numberOfOptions );
 }

@@ -64,6 +64,7 @@ final class MetadataDiscoverer
         $result->process = MetadataDiscoverer::discoverProcessData();
         $result->service = MetadataDiscoverer::discoverServiceData($this->config);
         $result->system = MetadataDiscoverer::discoverSystemData($this->config);
+        $result->labels = MetadataDiscoverer::discoverGlobalData($this->config);
 
         return $result;
     }
@@ -124,6 +125,28 @@ final class MetadataDiscoverer
                 $result->detectedHostname = Tracer::limitKeywordString($detectedHostname);
                 $result->hostname = $result->detectedHostname;
             }
+        }
+
+        return $result;
+    }
+
+    public function discoverGlobalData(ConfigSnapshot $config): GlobalLabelData
+    {
+        $result = new GlobalLabelData();
+        $dict = [];
+        if ($this->config->globalLabels() !== null) {
+            // $serializedMetadata .= "\n";
+           
+            $labels = explode (",", $this->config->globalLabels());
+            foreach ($labels as $label) {
+                $label_arr = explode("=", $label);
+                $dict[$label_arr[0]] = $label_arr[1];
+            }
+            $result->projectName = $dict['_tag_projectName'];
+            $result->appName = $dict['_tag_appName'];
+            $result->profileId = $dict['_tag_profileId'];
+            // $serializedMetadata = substr($serializedMetadata, 0, -1);
+            // $serializedMetadata .= "}}";
         }
 
         return $result;

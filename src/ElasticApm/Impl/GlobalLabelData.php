@@ -32,51 +32,36 @@ use Elastic\Apm\Impl\Log\LoggableTrait;
  *
  * @internal
  */
-final class Metadata implements SerializableDataInterface, LoggableInterface
+class GlobalLabelData implements SerializableDataInterface, LoggableInterface
 {
     use LoggableTrait;
 
     /**
-     * @var ProcessData
-     *
-     * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/metadata.json#L22
-     * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/process.json
+     * @var string|null
+     * Snappyflow project name
      */
-    public $process;
+    public $projectName = null;
 
     /**
-     * @var ServiceData
-     *
-     * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/metadata.json#L7
-     * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/service.json
+     * @var string|null
+     * Snappyflow application name
      */
-    public $service;
+    public $appName = null;
 
     /**
-     * @var SystemData
-     *
-     * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/metadata.json#L25
-     * @link github.com/elastic/apm-server/blob/v7.0.0/docs/spec/system.json
+     * @var string|null
+     * Snappyflow application name
      */
-    public $system;
-
-    /**
-     * @var GloblalLabelData
-     *
-     * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/metadata.json#L25
-     * @link github.com/elastic/apm-server/blob/v7.0.0/docs/spec/system.json
-     */
-    public $labels;
+    public $profileId = null;
 
     /** @inheritDoc */
     public function jsonSerialize()
     {
         $result = [];
 
-        SerializationUtil::addNameValue('process', $this->process, /* ref */ $result);
-        SerializationUtil::addNameValue('service', $this->service, /* ref */ $result);
-        SerializationUtil::addNameValue('system', $this->system, /* ref */ $result);
-        SerializationUtil::addNameValue('labels', $this->labels, /* ref */ $result);
+        SerializationUtil::addNameValueIfNotNull('_tag_projectName', $this->projectName, /* ref */ $result);
+        SerializationUtil::addNameValueIfNotNull('_tag_appName', $this->appName, /* ref */ $result);
+        SerializationUtil::addNameValueIfNotNull('_tag_profileId', $this->profileId, /* ref */ $result);
 
         return SerializationUtil::postProcessResult($result);
     }

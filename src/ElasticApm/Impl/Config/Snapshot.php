@@ -161,6 +161,9 @@ final class Snapshot implements LoggableInterface
     /** @var bool */
     private $verifyServerCert;
 
+    /** @var string */
+    private $globalLabels;
+
     /**
      * Snapshot constructor.
      *
@@ -264,5 +267,10 @@ final class Snapshot implements LoggableInterface
     public function urlGroups(): ?WildcardListMatcher
     {
         return $this->urlGroups;
+    }
+    
+    public function globalLabels(): ?string
+    {
+        return $this->globalLabels;
     }
 }

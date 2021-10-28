@@ -81,6 +81,7 @@ final class AllOptionsMetadata
                     new FloatOptionMetadata(/* minValidValue */ 0.0, /* maxValidValue */ 1.0, /* defaultValue */ 1.0),
                 OptionNames::URL_GROUPS               => new NullableWildcardListOptionMetadata(),
                 OptionNames::VERIFY_SERVER_CERT       => new BoolOptionMetadata(/* defaultValue: */ true),
+                OptionNames::GLOBAL_LABELS            => new NullableStringOptionMetadata(),
             ];
         }
 
