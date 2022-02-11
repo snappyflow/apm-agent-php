@@ -39,3 +39,6 @@ build/
 
 # Backup files when using sed
 .bck
+
+
+install_elastic_apm_dev.sh
