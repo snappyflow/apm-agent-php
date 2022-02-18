@@ -34,7 +34,7 @@ final class LoggableToString
 {
     use StaticClassTrait;
 
-    public const DEFAULT_LENGTH_LIMIT = 1000;
+    public static $DEFAULT_LENGTH_LIMIT = 1000;
 
     /**
      * @param mixed $value
@@ -46,7 +46,7 @@ final class LoggableToString
     public static function convert(
         $value,
         bool $prettyPrint = false,
-        int $lengthLimit = self::DEFAULT_LENGTH_LIMIT
+        int $lengthLimit = 1000
     ): string {
         return LoggableToEncodedJson::convert($value, $prettyPrint, $lengthLimit);
     }

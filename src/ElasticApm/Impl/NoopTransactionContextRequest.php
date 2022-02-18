@@ -37,7 +37,7 @@ final class NoopTransactionContextRequest implements TransactionContextRequestIn
     use NoopObjectTrait;
 
     /** @inheritDoc */
-    public function setMethod(string $method): void
+    public function setMethod(string $method)
     {
     }
 

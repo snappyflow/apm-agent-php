@@ -34,13 +34,13 @@ final class HttpDistributedTracing
 {
     use StaticClassTrait;
 
-    public const TRACE_PARENT_HEADER_NAME = 'traceparent';
+    public static $TRACE_PARENT_HEADER_NAME = 'traceparent';
 
-    private const SUPPORTED_FORMAT_VERSION = '00';
+    private static $SUPPORTED_FORMAT_VERSION = '00';
 
-    public const INVALID_TRACE_ID = '00000000000000000000000000000000';
-    public const INVALID_PARENT_ID = '0000000000000000';
-    private const SAMPLED_FLAG = 0b00000001;
+    public static $INVALID_TRACE_ID = '00000000000000000000000000000000';
+    public static $INVALID_PARENT_ID = '0000000000000000';
+    private static $SAMPLED_FLAG = 0b00000001;
 
     /** @var Logger */
     private $logger;
@@ -48,14 +48,14 @@ final class HttpDistributedTracing
     public function __construct(LoggerFactory $loggerFactory)
     {
         $this->logger = $loggerFactory->loggerForClass(
-            LogCategory::DISTRIBUTED_TRACING,
+            LogCategory::$DISTRIBUTED_TRACING,
             __NAMESPACE__,
             __CLASS__,
             __FILE__
         );
     }
 
-    public function parseTraceParentHeader(string $headerValue): ?DistributedTracingData
+    public function parseTraceParentHeader(string $headerValue): DistributedTracingData
     {
         // 00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01
         // ^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^ ^^
@@ -72,7 +72,7 @@ final class HttpDistributedTracing
         ) use (
             $parentFunc,
             $headerValue
-        ): void {
+        ) {
             ($loggerProxy = $this->logger->ifDebugLevelEnabled($srcCodeLineNumber, $parentFunc))
             && $loggerProxy->log(
                 "Failed to parse HTTP header used for distributed tracing: $reason",
@@ -94,21 +94,21 @@ final class HttpDistributedTracing
         }
 
         $version = $parts[0];
-        if ($version !== self::SUPPORTED_FORMAT_VERSION) {
+        if ($version !== self::$SUPPORTED_FORMAT_VERSION) {
             $logParsingFailedMessage('unsupported version', ['version' => $version, 'parts' => $parts], __LINE__);
             return null;
         }
 
         $traceId = $parts[1];
-        if (!IdValidationUtil::isValidHexNumberString($traceId, Constants::TRACE_ID_SIZE_IN_BYTES)) {
+        if (!IdValidationUtil::isValidHexNumberString($traceId, Constants::$TRACE_ID_SIZE_IN_BYTES)) {
             $logParsingFailedMessage(
-                'traceId is not a valid ' . Constants::TRACE_ID_SIZE_IN_BYTES . ' bytes hex ID',
+                'traceId is not a valid ' . Constants::$TRACE_ID_SIZE_IN_BYTES . ' bytes hex ID',
                 ['traceId' => $traceId, 'parts' => $parts],
                 __LINE__
             );
             return null;
         }
-        if ($traceId === self::INVALID_TRACE_ID) {
+        if ($traceId === self::$INVALID_TRACE_ID) {
             $logParsingFailedMessage(
                 'traceId that is all bytes as zero (00000000000000000000000000000000) is considered an invalid value',
                 ['traceId' => $traceId, 'parts' => $parts],
@@ -119,15 +119,15 @@ final class HttpDistributedTracing
         $result->traceId = strtolower($traceId);
 
         $parentId = $parts[2];
-        if (!IdValidationUtil::isValidHexNumberString($parentId, Constants::EXECUTION_SEGMENT_ID_SIZE_IN_BYTES)) {
+        if (!IdValidationUtil::isValidHexNumberString($parentId, Constants::$EXECUTION_SEGMENT_ID_SIZE_IN_BYTES)) {
             $logParsingFailedMessage(
-                'parentId is not a valid ' . Constants::EXECUTION_SEGMENT_ID_SIZE_IN_BYTES . ' bytes hex ID',
+                'parentId is not a valid ' . Constants::$EXECUTION_SEGMENT_ID_SIZE_IN_BYTES . ' bytes hex ID',
                 ['parentId' => $parentId, 'parts' => $parts],
                 __LINE__
             );
             return null;
         }
-        if ($parentId === self::INVALID_PARENT_ID) {
+        if ($parentId === self::$INVALID_PARENT_ID) {
             $logParsingFailedMessage(
                 'parentId that is all bytes as zero (0000000000000000) is considered an invalid value',
                 ['parentId' => $parentId, 'parts' => $parts],
@@ -147,14 +147,14 @@ final class HttpDistributedTracing
             return null;
         }
         $flagsAsInt = hexdec($flagsAsString);
-        $result->isSampled = ($flagsAsInt & self::SAMPLED_FLAG) === 1;
+        $result->isSampled = ($flagsAsInt & self::$SAMPLED_FLAG) === 1;
 
         return $result;
     }
 
-    public static function buildTraceParentHeader(DistributedTracingData $data): string
+    public static  function buildTraceParentHeader(DistributedTracingData $data): string
     {
-        return self::SUPPORTED_FORMAT_VERSION
+        return self::$SUPPORTED_FORMAT_VERSION
            . '-' . $data->traceId
            . '-' . $data->parentId
            . '-' . ($data->isSampled ? '01' : '00');

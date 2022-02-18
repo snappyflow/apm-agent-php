@@ -53,7 +53,7 @@ interface SpanInterface extends ExecutionSegmentInterface
      *
      * @return void
      */
-    public function setAction(?string $action): void;
+    public function setAction(string $action);
 
     /**
      * A further sub-division of the type
@@ -65,7 +65,7 @@ interface SpanInterface extends ExecutionSegmentInterface
      *
      * @param string|null $subtype
      */
-    public function setSubtype(?string $subtype): void;
+    public function setSubtype(string $subtype);
 
     /**
      * Returns context (context allows to set labels, etc.)
@@ -80,5 +80,5 @@ interface SpanInterface extends ExecutionSegmentInterface
      *
      * @see ExecutionSegmentInterface::end() For the description
      */
-    public function endSpanEx(int $numberOfStackFramesToSkip, ?float $duration = null): void;
+    public function endSpanEx(int $numberOfStackFramesToSkip, float $duration = null);
 }

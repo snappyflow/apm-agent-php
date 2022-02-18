@@ -36,9 +36,9 @@ use Elastic\Apm\Impl\Log\LoggerFactory;
  */
 final class MetadataDiscoverer
 {
-    public const AGENT_NAME = 'php';
-    public const LANGUAGE_NAME = 'PHP';
-    public const DEFAULT_SERVICE_NAME = 'Unnamed PHP service';
+    public static $AGENT_NAME = 'php';
+    public static $LANGUAGE_NAME = 'PHP';
+    public static $DEFAULT_SERVICE_NAME = 'Unnamed PHP service';
 
     /** @var ConfigSnapshot */
     private $config;
@@ -49,7 +49,7 @@ final class MetadataDiscoverer
     private function __construct(ConfigSnapshot $config, LoggerFactory $loggerFactory)
     {
         $this->config = $config;
-        $this->logger = $loggerFactory->loggerForClass(LogCategory::BACKEND_COMM, __NAMESPACE__, __CLASS__, __FILE__);
+        $this->logger = $loggerFactory->loggerForClass(LogCategory::$BACKEND_COMM, __NAMESPACE__, __CLASS__, __FILE__);
     }
 
     public static function discoverMetadata(ConfigSnapshot $config, LoggerFactory $loggerFactory): Metadata
@@ -69,19 +69,19 @@ final class MetadataDiscoverer
         return $result;
     }
 
-    public static function adaptServiceName(string $configuredName): string
+    public static  function adaptServiceName(string $configuredName): string
     {
         if (empty($configuredName)) {
-            return self::DEFAULT_SERVICE_NAME;
+            return self::$DEFAULT_SERVICE_NAME;
         }
 
         $charsAdaptedName = preg_replace('/[^a-zA-Z0-9 _\-]/', '_', $configuredName);
         return is_null($charsAdaptedName)
-            ? MetadataDiscoverer::DEFAULT_SERVICE_NAME
+            ? MetadataDiscoverer::$DEFAULT_SERVICE_NAME
             : Tracer::limitKeywordString($charsAdaptedName);
     }
 
-    private static function setKeywordStringIfNotNull(?string $srcCfgVal, ?string &$dstProp): void
+    public static function setKeywordStringIfNotNull($srcCfgVal, &$dstProp)
     {
         if ($srcCfgVal !== null) {
             $dstProp = Tracer::limitKeywordString($srcCfgVal);
@@ -95,17 +95,17 @@ final class MetadataDiscoverer
         self::setKeywordStringIfNotNull($config->environment(), /* ref */ $result->environment);
 
         $result->name = $config->serviceName() === null
-            ? MetadataDiscoverer::DEFAULT_SERVICE_NAME
+            ? MetadataDiscoverer::$DEFAULT_SERVICE_NAME
             : MetadataDiscoverer::adaptServiceName($config->serviceName());
 
         self::setKeywordStringIfNotNull($config->serviceNodeName(), /* ref */ $result->nodeConfiguredName);
         self::setKeywordStringIfNotNull($config->serviceVersion(), /* ref */ $result->version);
 
         $result->agent = new ServiceAgentData();
-        $result->agent->name = self::AGENT_NAME;
-        $result->agent->version = ElasticApm::VERSION;
+        $result->agent->name = self::$AGENT_NAME;
+        $result->agent->version = ElasticApm::$VERSION;
 
-        $result->language = $this->buildNameVersionData(MetadataDiscoverer::LANGUAGE_NAME, PHP_VERSION);
+        $result->language = $this->buildNameVersionData(MetadataDiscoverer::$LANGUAGE_NAME, PHP_VERSION);
 
         $result->runtime = $result->language;
 
@@ -152,7 +152,7 @@ final class MetadataDiscoverer
         return $result;
     }
 
-    public function buildNameVersionData(?string $name, ?string $version): NameVersionData
+    public function buildNameVersionData(string $name, string $version): NameVersionData
     {
         $result = new NameVersionData();
 

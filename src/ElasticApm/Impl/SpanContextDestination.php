@@ -49,7 +49,7 @@ final class SpanContextDestination extends ContextDataWrapper implements SpanCon
         $this->data = $data;
     }
 
-    public function setService(string $name, string $resource, string $type): void
+    public function setService(string $name, string $resource, string $type)
     {
         if ($this->beforeMutating()) {
             return;

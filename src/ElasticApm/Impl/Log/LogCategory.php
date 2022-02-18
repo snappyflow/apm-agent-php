@@ -34,11 +34,11 @@ final class LogCategory
 {
     use StaticClassTrait;
 
-    public const AUTO_INSTRUMENTATION = 'Auto-Instrumentation';
-    public const BACKEND_COMM = 'Backend-Comm';
-    public const CONFIGURATION = 'Configuration';
-    public const DISCOVERY = 'Discovery';
-    public const DISTRIBUTED_TRACING = 'Distributed-Tracing';
-    public const INTERCEPTION = 'Interception';
-    public const PUBLIC_API = 'Public-API';
+    public static $AUTO_INSTRUMENTATION = 'Auto-Instrumentation';
+    public static $BACKEND_COMM = 'Backend-Comm';
+    public static $CONFIGURATION = 'Configuration';
+    public static $DISCOVERY = 'Discovery';
+    public static $DISTRIBUTED_TRACING = 'Distributed-Tracing';
+    public static $INTERCEPTION = 'Interception';
+    public static $PUBLIC_API = 'Public-API';
 }

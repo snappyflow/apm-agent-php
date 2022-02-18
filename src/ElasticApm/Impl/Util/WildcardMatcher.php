@@ -30,11 +30,11 @@ namespace Elastic\Apm\Impl\Util;
  */
 final class WildcardMatcher
 {
-    private const CASE_SENSITIVE_PREFIX = '(?-i)';
-    private const WILDCARD = '*';
+    private static $CASE_SENSITIVE_PREFIX = '(?-i)';
+    private static $WILDCARD = '*';
 
     /** @var int */
-    private static $wildcardLen;
+    public static $wildcardLen;
 
     /** @var bool */
     private $isCaseSensitive;
@@ -51,17 +51,17 @@ final class WildcardMatcher
     public function __construct(string $expr)
     {
         if (!isset(self::$wildcardLen)) {
-            self::$wildcardLen = strlen(self::WILDCARD);
+            self::$wildcardLen = strlen(self::$WILDCARD);
         }
 
-        $this->isCaseSensitive = TextUtil::isPrefixOf(self::CASE_SENSITIVE_PREFIX, $expr);
-        $exprPos = $this->isCaseSensitive ? strlen(self::CASE_SENSITIVE_PREFIX) : 0;
+        $this->isCaseSensitive = TextUtil::isPrefixOf(self::$CASE_SENSITIVE_PREFIX, $expr);
+        $exprPos = $this->isCaseSensitive ? strlen(self::$CASE_SENSITIVE_PREFIX) : 0;
         $exprLen = strlen($expr);
         $this->literalParts = [];
         $this->startsWithWildcard = false;
         $lastPartWasWildcard = false;
         while ($exprPos < $exprLen) {
-            $nextWildcardPos = strpos($expr, self::WILDCARD, $exprPos);
+            $nextWildcardPos = strpos($expr, self::$WILDCARD, $exprPos);
             if ($nextWildcardPos === $exprPos) {
                 $lastPartWasWildcard = true;
                 /** @noinspection PhpConditionAlreadyCheckedInspection */
@@ -144,7 +144,7 @@ final class WildcardMatcher
         $result = '';
 
         if ($this->startsWithWildcard) {
-            $result .= self::WILDCARD;
+            $result .= self::$WILDCARD;
         }
 
         $isFirstLiteralPart = true;
@@ -152,13 +152,13 @@ final class WildcardMatcher
             if ($isFirstLiteralPart) {
                 $isFirstLiteralPart = false;
             } else {
-                $result .= self::WILDCARD;
+                $result .= self::$WILDCARD;
             }
             $result .= $literalPart;
         }
 
         if ($this->endsWithWildcard) {
-            $result .= self::WILDCARD;
+            $result .= self::$WILDCARD;
         }
 
         return $result;
@@ -169,7 +169,7 @@ final class WildcardMatcher
         $result = $this->groupName();
 
         if ($this->isCaseSensitive) {
-            $result = self::CASE_SENSITIVE_PREFIX . $result;
+            $result = self::$CASE_SENSITIVE_PREFIX . $result;
         }
 
         return $result;

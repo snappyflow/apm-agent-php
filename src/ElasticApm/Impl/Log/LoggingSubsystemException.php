@@ -33,7 +33,7 @@ use Throwable;
  */
 final class LoggingSubsystemException extends RuntimeException
 {
-    public function __construct(string $message, ?Throwable $causedBy = null, int $code = 0)
+    public function __construct(string $message, Throwable $causedBy = null, int $code = 0)
     {
         parent::__construct($message, $code, $causedBy);
     }

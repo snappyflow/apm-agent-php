@@ -74,7 +74,7 @@ abstract class ContextDataWrapper implements LoggableInterface
     }
 
     /** @inheritDoc */
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
         $this->toLogLoggableTraitImpl($stream, ['ownerId' => $this->owner->getId()]);
     }

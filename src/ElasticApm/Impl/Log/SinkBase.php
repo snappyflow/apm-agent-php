@@ -41,9 +41,9 @@ abstract class SinkBase implements SinkInterface
         string $srcCodeFile,
         int $srcCodeLine,
         string $srcCodeFunc,
-        ?bool $includeStacktrace,
+        bool $includeStacktrace,
         int $numberOfStackFramesToSkip
-    ): void {
+    ) {
         $combinedContext = [];
 
         // Traverse $contextsStack in reverse order since the data most specific to the log statement is on top
@@ -55,8 +55,8 @@ abstract class SinkBase implements SinkInterface
             }
         }
 
-        if (is_null($includeStacktrace) ? ($statementLevel <= Level::ERROR) : $includeStacktrace) {
-            $combinedContext[LoggablePhpStacktrace::STACK_TRACE_KEY]
+        if (is_null($includeStacktrace) ? ($statementLevel <= Level::$ERROR) : $includeStacktrace) {
+            $combinedContext[LoggablePhpStacktrace::$STACK_TRACE_KEY]
                 = LoggablePhpStacktrace::buildForCurrent($numberOfStackFramesToSkip + 1);
         }
 
@@ -88,5 +88,5 @@ abstract class SinkBase implements SinkInterface
         int $srcCodeLine,
         string $srcCodeFunc,
         string $messageWithContext
-    ): void;
+    );
 }

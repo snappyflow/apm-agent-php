@@ -36,17 +36,17 @@ final class NoopSpanContextHttp implements SpanContextHttpInterface
     use NoopObjectTrait;
 
     /** @inheritDoc */
-    public function setUrl(?string $url): void
+    public function setUrl(string $url)
     {
     }
 
     /** @inheritDoc */
-    public function setStatusCode(?int $statusCode): void
+    public function setStatusCode(int $statusCode)
     {
     }
 
     /** @inheritDoc */
-    public function setMethod(?string $method): void
+    public function setMethod(string $method)
     {
     }
 }

@@ -32,11 +32,11 @@ interface TransactionContextRequestUrlInterface
      *
      * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/request.json#L69
      *
-     * @param ?string $domain
+     * @param string $domain
      *
      * @return void
      */
-    public function setDomain(?string $domain): void;
+    public function setDomain(string $domain);
 
     /**
      * The full, possibly agent-assembled URL of the request
@@ -45,11 +45,11 @@ interface TransactionContextRequestUrlInterface
      *
      * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/request.json#L64
      *
-     * @param ?string $full
+     * @param string $full
      *
      * @return void
      */
-    public function setFull(?string $full): void;
+    public function setFull(string $full);
 
     /**
      * The raw, unparsed URL of the HTTP request line, e.g https://example.com:443/search?q=elasticsearch.
@@ -60,11 +60,11 @@ interface TransactionContextRequestUrlInterface
      *
      * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/request.json#L54
      *
-     * @param ?string $original
+     * @param string $original
      *
      * @return void
      */
-    public function setOriginal(?string $original): void;
+    public function setOriginal(string $original);
 
     /**
      * The path of the request, e.g. '/search'
@@ -73,22 +73,22 @@ interface TransactionContextRequestUrlInterface
      *
      * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/request.json#L79
      *
-     * @param ?string $path
+     * @param string $path
      *
      * @return void
      */
-    public function setPath(?string $path): void;
+    public function setPath(string $path);
 
     /**
      * The port of the request, e.g. 443
      *
      * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/request.json#L74
      *
-     * @param ?int $port
+     * @param int $port
      *
      * @return void
      */
-    public function setPort(?int $port): void;
+    public function setPort(int $port);
 
     /**
      * The protocol of the request, e.g. 'http'
@@ -97,11 +97,11 @@ interface TransactionContextRequestUrlInterface
      *
      * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/request.json#L59
      *
-     * @param ?string $protocol
+     * @param string $protocol
      *
      * @return void
      */
-    public function setProtocol(?string $protocol): void;
+    public function setProtocol(string $protocol);
 
     /**
      * Sets the query string information of the request.
@@ -111,9 +111,9 @@ interface TransactionContextRequestUrlInterface
      *
      * @link https://github.com/elastic/apm-server/blob/v7.0.0/docs/spec/request.json#L84
      *
-     * @param ?string $query
+     * @param string $query
      *
      * @return void
      */
-    public function setQuery(?string $query): void;
+    public function setQuery(string $query);
 }

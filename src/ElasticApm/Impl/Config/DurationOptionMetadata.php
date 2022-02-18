@@ -33,8 +33,8 @@ namespace Elastic\Apm\Impl\Config;
 final class DurationOptionMetadata extends OptionWithDefaultValueMetadata
 {
     public function __construct(
-        ?float $minValidValueInMilliseconds,
-        ?float $maxValidValueInMilliseconds,
+        float $minValidValueInMilliseconds,
+        float $maxValidValueInMilliseconds = null,
         int $defaultUnits,
         float $defaultValueInMilliseconds
     ) {

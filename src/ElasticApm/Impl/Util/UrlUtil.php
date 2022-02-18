@@ -32,7 +32,7 @@ final class UrlUtil
 {
     use StaticClassTrait;
 
-    public static function splitHostPort(string $hostPort, ?string &$host, ?int &$port): bool
+    public static function splitHostPort($hostPort, &$host, &$port): bool
     {
         $lastColonPos = strrpos($hostPort, ':');
         if ($lastColonPos === false) {
@@ -83,7 +83,7 @@ final class UrlUtil
                 : $hostTrimmed;
     }
 
-    public static function splitPathQuery(string $pathQuery, ?string &$path, ?string &$query): bool
+    public static function splitPathQuery($pathQuery, &$path, &$query): bool
     {
         $parsedUrl = parse_url($pathQuery);
         if (!is_array($parsedUrl)) {
@@ -105,7 +105,7 @@ final class UrlUtil
         return true;
     }
 
-    public static function extractHostPart(string $url): ?string
+    public static function extractHostPart(string $url): string
     {
         $result = parse_url($url, PHP_URL_HOST);
         if (!is_string($result)) {
@@ -120,7 +120,7 @@ final class UrlUtil
                || TextUtil::isPrefixOf('https://', $url, /* isCaseSensitive */ false);
     }
 
-    public static function defaultPortForScheme(string $scheme): ?int
+    public static function defaultPortForScheme(string $scheme): int
     {
         if (strcasecmp($scheme, 'http') === 0) {
             return 80;

@@ -35,46 +35,46 @@ final class UrlParts implements LoggableInterface
 {
     use LoggableTrait;
 
-    /** @var ?string */
+    /** @var string */
     public $scheme = null;
 
-    /** @var ?string */
+    /** @var string */
     public $host = null;
 
-    /** @var ?int */
+    /** @var int */
     public $port = null;
 
-    /** @var ?string */
+    /** @var string */
     public $path = null;
 
-    /** @var ?string */
+    /** @var string */
     public $query = null;
 
-    public function scheme(?string $scheme): self
+    public function scheme(string $scheme): self
     {
         $this->scheme = $scheme;
         return $this;
     }
 
-    public function host(?string $host): self
+    public function host(string $host): self
     {
         $this->host = $host;
         return $this;
     }
 
-    public function port(?int $port): self
+    public function port(int $port): self
     {
         $this->port = $port;
         return $this;
     }
 
-    public function path(?string $path): self
+    public function path(string $path): self
     {
         $this->path = $path;
         return $this;
     }
 
-    public function query(?string $query): self
+    public function query(string $query): self
     {
         $this->query = $query;
         return $this;

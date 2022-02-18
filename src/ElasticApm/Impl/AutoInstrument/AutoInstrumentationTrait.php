@@ -44,15 +44,15 @@ trait AutoInstrumentationTrait
      * @param SpanInterface   $span
      * @param bool            $hasExitedByException
      * @param mixed|Throwable $returnValueOrThrown Return value of the intercepted call or thrown object
-     * @param ?float          $duration
+     * @param float          $duration
      */
     protected static function endSpan(
         int $numberOfStackFramesToSkip,
         SpanInterface $span,
         bool $hasExitedByException,
         $returnValueOrThrown,
-        ?float $duration = null
-    ): void {
+        float $duration = null
+    ) {
         if ($hasExitedByException && is_object($returnValueOrThrown) && ($returnValueOrThrown instanceof Throwable)) {
             $span->createErrorFromThrowable($returnValueOrThrown);
         }
@@ -69,9 +69,9 @@ trait AutoInstrumentationTrait
      * @param SpanInterface $span
      *
      * @return callable
-     * @phpstan-return callable(int, bool, mixed): void
+     * @phpstan-return callable(int, bool, mixed)
      */
-    protected static function createPostHookFromEndSpan(SpanInterface $span): ?callable
+    protected static function createPostHookFromEndSpan(SpanInterface $span)
     {
         if ($span->isNoop()) {
             return null;
@@ -88,7 +88,7 @@ trait AutoInstrumentationTrait
             $returnValueOrThrown
         ) use (
             $span
-        ): void {
+	) {
             self::endSpan(
                 $numberOfStackFramesToSkip + 1,
                 $span,
@@ -105,9 +105,9 @@ trait AutoInstrumentationTrait
      * @return void
      */
     protected static function assertInterceptedCallThisIsNotNull(
-        ?object $interceptedCallThis,
+        $interceptedCallThis = null,
         array $interceptedCallArgs
-    ): void {
+    ) {
         ($assertProxy = Assert::ifEnabled())
         && $assertProxy->that(!is_null($interceptedCallThis))
         && $assertProxy->withContext('!is_null($interceptedCallThis)', ['interceptedCallArgs' => $interceptedCallArgs]);
@@ -122,7 +122,7 @@ trait AutoInstrumentationTrait
     protected static function assertInterceptedCallNotExitedByException(
         bool $hasExitedByException,
         array $dbgCtx = []
-    ): void {
+    ) {
         ($assertProxy = Assert::ifEnabled())
         && $assertProxy->that(!$hasExitedByException)
         && $assertProxy->withContext('!$hasExitedByException', $dbgCtx);

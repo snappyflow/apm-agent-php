@@ -40,8 +40,8 @@ final class NoopEventSink implements EventSinkInterface
         Metadata $metadata,
         array $spansData,
         array $errorsData,
-        ?BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
-        ?TransactionData $transactionData
-    ): void {
+        BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
+        TransactionData $transactionData
+    ) {
     }
 }

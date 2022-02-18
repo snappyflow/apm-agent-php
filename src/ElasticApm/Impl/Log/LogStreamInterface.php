@@ -33,7 +33,7 @@ interface LogStreamInterface
     /**
      * @param mixed $value
      */
-    public function toLogAs($value): void;
+    public function toLogAs($value);
 
     public function isLastLevel(): bool;
 }

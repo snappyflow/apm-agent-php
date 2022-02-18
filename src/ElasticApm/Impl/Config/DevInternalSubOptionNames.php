@@ -34,8 +34,8 @@ final class DevInternalSubOptionNames
 {
     use StaticClassTrait;
 
-    public const DROP_EVENT_AFTER_END = 'drop_event_after_end';
-    public const DROP_EVENTS_BEFORE_SEND_C_CODE = 'drop_events_before_send_c_code';
-    public const GC_COLLECT_CYCLES_AFTER_EVERY_TRANSACTION = 'gc_collect_cycles_after_every_transaction';
-    public const GC_MEM_CACHES_AFTER_EVERY_TRANSACTION = 'gc_mem_caches_after_every_transaction';
+    public static $DROP_EVENT_AFTER_END = 'drop_event_after_end';
+    public static $DROP_EVENTS_BEFORE_SEND_C_CODE = 'drop_events_before_send_c_code';
+    public static $GC_COLLECT_CYCLES_AFTER_EVERY_TRANSACTION = 'gc_collect_cycles_after_every_transaction';
+    public static $GC_MEM_CACHES_AFTER_EVERY_TRANSACTION = 'gc_mem_caches_after_every_transaction';
 }

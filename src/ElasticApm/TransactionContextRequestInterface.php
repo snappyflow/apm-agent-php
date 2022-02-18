@@ -36,7 +36,7 @@ interface TransactionContextRequestInterface
      *
      * @return void
      */
-    public function setMethod(string $method): void;
+    public function setMethod(string $method);
 
     /**
      * Returns an object that can be used to collect information about HTTP request's URL

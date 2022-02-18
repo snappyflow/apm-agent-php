@@ -30,7 +30,7 @@ namespace Elastic\Apm\Impl\Config;
  */
 final class EnvVarsRawSnapshotSource implements RawSnapshotSourceInterface
 {
-    public const DEFAULT_NAME_PREFIX = 'ELASTIC_APM_';
+    public static $DEFAULT_NAME_PREFIX = 'ELASTIC_APM_';
 
     /** @var string */
     private $envVarNamesPrefix;

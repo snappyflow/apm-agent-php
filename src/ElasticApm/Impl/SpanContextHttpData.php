@@ -41,7 +41,7 @@ final class SpanContextHttpData implements OptionalSerializableDataInterface, Lo
     use LoggableTrait;
 
     /**
-     * @var ?string
+     * @var string
      *
      * The raw url of the correlating http request
      *
@@ -50,7 +50,7 @@ final class SpanContextHttpData implements OptionalSerializableDataInterface, Lo
     public $url = null;
 
     /**
-     * @var ?int
+     * @var int
      *
      * The status code of the http request
      *
@@ -59,7 +59,7 @@ final class SpanContextHttpData implements OptionalSerializableDataInterface, Lo
     public $statusCode = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * The method of the http request
      *

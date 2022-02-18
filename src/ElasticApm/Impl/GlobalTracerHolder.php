@@ -42,20 +42,20 @@ final class GlobalTracerHolder
         return !is_null(self::$singletonInstance);
     }
 
-    public static function get(): TracerInterface
-    {
+    public static  function get(): TracerInterface
+    {   
         if (is_null(self::$singletonInstance)) {
             self::$singletonInstance = TracerBuilder::startNew()->build();
-        }
+	}
         return self::$singletonInstance;
     }
 
-    public static function set(TracerInterface $newInstance): void
+    public static  function set(TracerInterface $newInstance)
     {
         self::$singletonInstance = $newInstance;
     }
 
-    public static function unset(): void
+    public static  function unset()
     {
         self::$singletonInstance = null;
     }

@@ -124,14 +124,14 @@ class ErrorData implements SerializableDataInterface, LoggableInterface
 
     public static function build(
         Tracer $tracer,
-        ?ErrorExceptionData $errorExceptionData,
-        ?Transaction $transaction,
-        ?Span $span
+        ErrorExceptionData $errorExceptionData,
+        Transaction $transaction,
+        Span $span
     ): ErrorData {
         $result = new ErrorData();
 
         $result->timestamp = $tracer->getClock()->getSystemClockCurrentTime();
-        $result->id = IdGenerator::generateId(Constants::ERROR_ID_SIZE_IN_BYTES);
+        $result->id = IdGenerator::generateId(Constants::$ERROR_ID_SIZE_IN_BYTES);
 
         if (!is_null($transaction)) {
             $result->transaction = ErrorTransactionData::build($transaction);

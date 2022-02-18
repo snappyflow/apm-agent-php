@@ -35,23 +35,23 @@ final class DurationUnits
 {
     use StaticClassTrait;
 
-    public const MILLISECONDS = 0;
-    public const SECONDS = self::MILLISECONDS + 1;
-    public const MINUTES = self::SECONDS + 1;
+    public static $MILLISECONDS = 0;
+    public static $SECONDS = 1;
+    public static $MINUTES = 2;
 
-    public const MILLISECONDS_SUFFIX = 'ms';
-    public const SECONDS_SUFFIX = 's';
-    public const MINUTES_SUFFIX = 'm';
+    public static $MILLISECONDS_SUFFIX = 'ms';
+    public static $SECONDS_SUFFIX = 's';
+    public static $MINUTES_SUFFIX = 'm';
 
     /**
      * @var array<array{string, int}> Array should be in descending order of suffix length
      *
      * @see TimeDurationUnitsTest::testSuffixAndIdIsInDescendingOrderOfSuffixLength
      */
-    public static $suffixAndIdPairs
+    public static  $suffixAndIdPairs
         = [
-            [self::MILLISECONDS_SUFFIX, self::MILLISECONDS],
-            [self::SECONDS_SUFFIX, self::SECONDS],
-            [self::MINUTES_SUFFIX, self::MINUTES],
+            ['ms', 0],
+            ['s', 1],
+            ['m', 2],
         ];
 }

@@ -44,7 +44,7 @@ final class TransactionContextRequestUrl extends ContextDataWrapper implements T
     }
 
     /** @inheritDoc */
-    public function setFull(?string $full): void
+    public function setFull(string $full)
     {
         if ($this->beforeMutating()) {
             return;
@@ -54,7 +54,7 @@ final class TransactionContextRequestUrl extends ContextDataWrapper implements T
     }
 
     /** @inheritDoc */
-    public function setDomain(?string $domain): void
+    public function setDomain(string $domain)
     {
         if ($this->beforeMutating()) {
             return;
@@ -64,7 +64,7 @@ final class TransactionContextRequestUrl extends ContextDataWrapper implements T
     }
 
     /** @inheritDoc */
-    public function setOriginal(?string $original): void
+    public function setOriginal(string $original)
     {
         if ($this->beforeMutating()) {
             return;
@@ -74,7 +74,7 @@ final class TransactionContextRequestUrl extends ContextDataWrapper implements T
     }
 
     /** @inheritDoc */
-    public function setPath(?string $path): void
+    public function setPath(string $path)
     {
         if ($this->beforeMutating()) {
             return;
@@ -84,7 +84,7 @@ final class TransactionContextRequestUrl extends ContextDataWrapper implements T
     }
 
     /** @inheritDoc */
-    public function setPort(?int $port): void
+    public function setPort(int $port)
     {
         if ($this->beforeMutating()) {
             return;
@@ -94,7 +94,7 @@ final class TransactionContextRequestUrl extends ContextDataWrapper implements T
     }
 
     /** @inheritDoc */
-    public function setProtocol(?string $protocol): void
+    public function setProtocol(string $protocol)
     {
         if ($this->beforeMutating()) {
             return;
@@ -104,7 +104,7 @@ final class TransactionContextRequestUrl extends ContextDataWrapper implements T
     }
 
     /** @inheritDoc */
-    public function setQuery(?string $query): void
+    public function setQuery(string $query)
     {
         if ($this->beforeMutating()) {
             return;

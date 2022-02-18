@@ -44,7 +44,7 @@ abstract class PluginBase implements PluginInterface
     public function __construct(Tracer $tracer, array $allInstrumentations)
     {
         $logger = $tracer->loggerFactory()->loggerForClass(
-            LogCategory::AUTO_INSTRUMENTATION,
+            LogCategory::$AUTO_INSTRUMENTATION,
             __NAMESPACE__,
             __CLASS__,
             __FILE__
@@ -64,7 +64,7 @@ abstract class PluginBase implements PluginInterface
         }
     }
 
-    public function register(RegistrationContextInterface $ctx): void
+    public function register(RegistrationContextInterface $ctx)
     {
         foreach ($this->enabledInstrumentations as $instr) {
             $instr->register($ctx);

@@ -30,8 +30,8 @@ namespace Elastic\Apm\Impl\Log;
  */
 final class LoggableArray implements LoggableInterface
 {
-    private const COUNT_KEY = 'count';
-    private const ARRAY_TYPE = 'array';
+    private static $COUNT_KEY = 'count';
+    private static $ARRAY_TYPE = 'array';
 
     /** @var array<mixed, mixed> */
     private $wrappedArray;
@@ -44,17 +44,17 @@ final class LoggableArray implements LoggableInterface
         $this->wrappedArray = $wrappedArray;
     }
 
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
         if ($stream->isLastLevel()) {
             $stream->toLogAs(
-                [LogConsts::TYPE_KEY => self::ARRAY_TYPE, self::COUNT_KEY => count($this->wrappedArray)]
+                [LogConsts::$TYPE_KEY => self::$ARRAY_TYPE, self::$COUNT_KEY => count($this->wrappedArray)]
             );
             return;
         }
 
         $stream->toLogAs(
-            [LogConsts::TYPE_KEY => self::ARRAY_TYPE, self::COUNT_KEY => count($this->wrappedArray)]
+            [LogConsts::$TYPE_KEY => self::$ARRAY_TYPE, self::$COUNT_KEY => count($this->wrappedArray)]
         );
     }
 }

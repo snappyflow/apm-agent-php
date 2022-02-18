@@ -44,7 +44,7 @@ final class Parser
      */
     public function __construct(LoggerFactory $loggerFactory)
     {
-        $this->logger = $loggerFactory->loggerForClass(LogCategory::CONFIGURATION, __NAMESPACE__, __CLASS__, __FILE__);
+        $this->logger = $loggerFactory->loggerForClass(LogCategory::$CONFIGURATION, __NAMESPACE__, __CLASS__, __FILE__);
     }
 
     /**

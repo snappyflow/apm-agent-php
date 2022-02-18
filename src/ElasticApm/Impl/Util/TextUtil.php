@@ -32,8 +32,8 @@ final class TextUtil
 {
     use StaticClassTrait;
 
-    private const CR_AS_INT = 13;
-    private const LF_AS_INT = 10;
+    private  static $CR_AS_INT = 13;
+    private  static $LF_AS_INT = 10;
 
     public static function ensureMaxLength(string $text, int $maxLength): string
     {
@@ -48,7 +48,7 @@ final class TextUtil
         return $str === '';
     }
 
-    public static function isNullOrEmptyString(?string $str): bool
+    public static function isNullOrEmptyString(string $str): bool
     {
         return is_null($str) || self::isEmptyString($str);
     }

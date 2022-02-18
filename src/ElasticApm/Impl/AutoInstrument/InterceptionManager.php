@@ -56,19 +56,19 @@ final class InterceptionManager
 
     /**
      * @var null|callable
-     * @phpstan-var null|callable(int, bool, mixed): void
+     * @phpstan-var null|callable(int, bool, mixed)
      */
     private $interceptedCallInProgressPreHookRetVal;
 
     public function __construct(Tracer $tracer)
     {
         $this->logger = $tracer->loggerFactory()
-                               ->loggerForClass(LogCategory::INTERCEPTION, __NAMESPACE__, __CLASS__, __FILE__);
+                               ->loggerForClass(LogCategory::$INTERCEPTION, __NAMESPACE__, __CLASS__, __FILE__);
 
         $this->loadPlugins($tracer);
     }
 
-    private function loadPlugins(Tracer $tracer): void
+    private function loadPlugins(Tracer $tracer)
     {
         $registerCtx = new RegistrationContext();
         $this->loadPluginsImpl($tracer, $registerCtx);
@@ -76,7 +76,7 @@ final class InterceptionManager
         $this->interceptedCallRegistrations = $registerCtx->interceptedCallRegistrations;
     }
 
-    private function loadPluginsImpl(Tracer $tracer, RegistrationContext $registerCtx): void
+    private function loadPluginsImpl(Tracer $tracer, RegistrationContext $registerCtx)
     {
         $builtinPlugin = new BuiltinPlugin($tracer);
         $registerCtx->dbgCurrentPluginIndex = 0;
@@ -95,8 +95,8 @@ final class InterceptionManager
      */
     public function interceptedCallPreHook(
         int $interceptRegistrationId,
-        ?object $thisObj,
-        array $interceptedCallArgs
+        $thisObj,
+        $interceptedCallArgs
     ): bool {
         $localLogger = $this->logger->inherit()->addContext('interceptRegistrationId', $interceptRegistrationId);
 
@@ -150,7 +150,7 @@ final class InterceptionManager
         int $numberOfStackFramesToSkip,
         bool $hasExitedByException,
         $returnValueOrThrown
-    ): void {
+    ) {
         ($loggerProxy = $this->logger->ifTraceLevelEnabled(__LINE__, __FUNCTION__))
         && $loggerProxy->log('Entered');
 

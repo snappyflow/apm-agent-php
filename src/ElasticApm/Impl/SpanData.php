@@ -66,7 +66,7 @@ class SpanData extends ExecutionSegmentData
         return SerializationUtil::postProcessResult($result);
     }
 
-    public function prepareForSerialization(): void
+    public function prepareForSerialization()
     {
         SerializationUtil::prepareForSerialization(/* ref */ $this->context);
     }

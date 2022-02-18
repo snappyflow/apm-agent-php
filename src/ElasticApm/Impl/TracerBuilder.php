@@ -84,7 +84,7 @@ final class TracerBuilder
         return $this;
     }
 
-    public function withConfigRawSnapshotSource(?ConfigRawSnapshotSourceInterface $configRawSnapshotSource): self
+    public function withConfigRawSnapshotSource(ConfigRawSnapshotSourceInterface $configRawSnapshotSource): self
     {
         $this->tracerDependencies->configRawSnapshotSource = $configRawSnapshotSource;
         return $this;
@@ -106,17 +106,17 @@ final class TracerBuilder
         return $config->enabled() ? new Tracer($this->tracerDependencies, $config) : NoopTracer::singletonInstance();
     }
 
-    private static function buildConfig(TracerDependencies $providedDependencies): ConfigSnapshot
+    public static function buildConfig(TracerDependencies $providedDependencies): ConfigSnapshot
     {
         $rawSnapshotSource = $providedDependencies->configRawSnapshotSource
                              ?? new CompositeRawSnapshotSource(
                                  [
-                                     new IniRawSnapshotSource(IniRawSnapshotSource::DEFAULT_PREFIX),
-                                     new EnvVarsRawSnapshotSource(EnvVarsRawSnapshotSource::DEFAULT_NAME_PREFIX),
+                                     new IniRawSnapshotSource(IniRawSnapshotSource::$DEFAULT_PREFIX),
+                                     new EnvVarsRawSnapshotSource(EnvVarsRawSnapshotSource::$DEFAULT_NAME_PREFIX),
                                  ]
                              );
 
-        $parsingLoggerFactory = new LoggerFactory(new LogBackend(LogLevel::TRACE, $providedDependencies->logSink));
+        $parsingLoggerFactory = new LoggerFactory(new LogBackend(LogLevel::$TRACE, $providedDependencies->logSink));
         $parser = new ConfigParser($parsingLoggerFactory);
         $allOptsMeta = AllOptionsMetadata::get();
         $rawSnapshot = $rawSnapshotSource->currentSnapshot($allOptsMeta);

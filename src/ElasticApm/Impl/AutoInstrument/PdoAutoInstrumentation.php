@@ -43,7 +43,7 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
 {
     use AutoInstrumentationTrait;
 
-    private const ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY = 'elastic_apm_DB_span_subtype';
+    private  static $ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY = 'elastic_apm_DB_span_subtype';
 
     /** @var Logger */
     private $logger;
@@ -53,7 +53,7 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
         parent::__construct($tracer);
 
         $this->logger = $tracer->loggerFactory()->loggerForClass(
-            LogCategory::AUTO_INSTRUMENTATION,
+            LogCategory::$AUTO_INSTRUMENTATION,
             __NAMESPACE__,
             __CLASS__,
             __FILE__
@@ -63,17 +63,17 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
     /** @inheritDoc */
     public function name(): string
     {
-        return InstrumentationNames::PDO;
+        return InstrumentationNames::$PDO;
     }
 
     /** @inheritDoc */
     public function otherNames(): array
     {
-        return [InstrumentationNames::DB];
+        return [InstrumentationNames::$DB];
     }
 
     /** @inheritDoc */
-    public function register(RegistrationContextInterface $ctx): void
+    public function register(RegistrationContextInterface $ctx)
     {
         if (!extension_loaded('pdo')) {
             return;
@@ -87,7 +87,7 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
         $this->pdoStatementExecute($ctx);
     }
 
-    private function pdoConstruct(RegistrationContextInterface $ctx): void
+    private function pdoConstruct(RegistrationContextInterface $ctx)
     {
         $ctx->interceptCallsToMethod(
             'PDO',
@@ -98,7 +98,7 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
              *
              * @return callable
              */
-            function (?object $interceptedCallThis, array $interceptedCallArgs): ?callable {
+            function (object $interceptedCallThis =  null, array $interceptedCallArgs) {
                 if (!($interceptedCallThis instanceof PDO)) {
                     ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
                     && $loggerProxy->log(
@@ -133,7 +133,7 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
                 $dbSpanSubtype = '';
                 DataSourceNameParser::parse($dsn, /* ref */ $dbSpanSubtype);
                 /** @phpstan-ignore-next-line */
-                $interceptedCallThis->{self::ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY} = $dbSpanSubtype;
+                $interceptedCallThis->{self::$ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY} = $dbSpanSubtype;
 
                 return null; // no post-hook
             }
@@ -141,20 +141,20 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
     }
 
     /**
-     * @param ?object $obj
+     * @param object $obj
      * @param string  $propName
      * @param mixed   $defaultValue
      *
      * @return mixed
      */
-    private function getDynamicallyAttachedProperty(?object $obj, string $propName, $defaultValue)
+    private function getDynamicallyAttachedProperty($obj = null, string $propName, $defaultValue)
     {
         return ($obj !== null) && isset($obj->{$propName})
             ? $obj->{$propName}
             : $defaultValue;
     }
 
-    private function pdoInterceptCallToSpan(RegistrationContextInterface $ctx, string $methodName): void
+    private function pdoInterceptCallToSpan(RegistrationContextInterface $ctx, string $methodName)
     {
         $ctx->interceptCallsToMethod(
             'PDO',
@@ -165,7 +165,7 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
              *
              * @return callable
              */
-            function (?object $interceptedCallThis, array $interceptedCallArgs) use ($methodName): ?callable {
+            function ($interceptedCallThis = null, array $interceptedCallArgs) use ($methodName) {
                 if (!($interceptedCallThis instanceof PDO)) {
                     ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
                     && $loggerProxy->log(
@@ -179,8 +179,8 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
 
                 $spanSubtype = $this->getDynamicallyAttachedProperty(
                     $interceptedCallThis,
-                    self::ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY,
-                    Constants::SPAN_TYPE_DB_SUBTYPE_UNKNOWN /* <- defaultValue */
+                    self::$ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY,
+                    Constants::$SPAN_TYPE_DB_SUBTYPE_UNKNOWN /* <- defaultValue */
                 );
 
                 $span = $this->beginDbSpan($statement ?? ('PDO->' . $methodName), $spanSubtype, $statement);
@@ -190,13 +190,13 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
         );
     }
 
-    private function beginDbSpan(string $name, string $subtype, ?string $statement): SpanInterface
+    private function beginDbSpan(string $name, string $subtype, string $statement = null): SpanInterface
     {
-        $span = ElasticApm::getCurrentTransaction()->beginCurrentSpan(
+	    $span = ElasticApm::getCurrentTransaction()->beginCurrentSpan(
             $name,
-            Constants::SPAN_TYPE_DB,
+            Constants::$SPAN_TYPE_DB,
             $subtype,
-            Constants::SPAN_ACTION_DB_QUERY
+            Constants::$SPAN_ACTION_DB_QUERY
         );
 
         if ($statement !== null) {
@@ -208,23 +208,23 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
         return $span;
     }
 
-    private function pdoExec(RegistrationContextInterface $ctx): void
+    private function pdoExec(RegistrationContextInterface $ctx)
     {
         $this->pdoInterceptCallToSpan($ctx, 'exec');
     }
 
-    private function pdoQuery(RegistrationContextInterface $ctx): void
+    private function pdoQuery(RegistrationContextInterface $ctx)
     {
         $this->pdoInterceptCallToSpan($ctx, 'query');
     }
 
-    // private function pdoCommit(RegistrationContextInterface $ctx): void
+    // private function pdoCommit(RegistrationContextInterface $ctx)
     // {
     //     $this->interceptCallToSpan($ctx, 'commit');
     // }
 
 
-    private function pdoPrepare(RegistrationContextInterface $ctx): void
+    private function pdoPrepare(RegistrationContextInterface $ctx)
     {
         $ctx->interceptCallsToMethod(
             'PDO',
@@ -238,9 +238,9 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
              * @return callable
              */
             function (
-                ?object $interceptedCallThis,
+                $interceptedCallThis = null,
                 /** @noinspection PhpUnusedParameterInspection */ array $interceptedCallArgs
-            ): ?callable {
+            ) {
                 if (!($interceptedCallThis instanceof PDO)) {
                     ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
                     && $loggerProxy->log(
@@ -252,8 +252,8 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
 
                 $spanSubtype = $this->getDynamicallyAttachedProperty(
                     $interceptedCallThis,
-                    self::ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY,
-                    Constants::SPAN_TYPE_DB_SUBTYPE_UNKNOWN /* <- defaultValue */
+                    self::$ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY,
+                    Constants::$SPAN_TYPE_DB_SUBTYPE_UNKNOWN /* <- defaultValue */
                 );
 
                 /**
@@ -269,7 +269,7 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
                     $returnValueOrThrown
                 ) use (
                     $spanSubtype
-                ): void {
+                ) {
                     if ($hasExitedByException || $returnValueOrThrown === false) {
                         return;
                     }
@@ -284,13 +284,13 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
                     }
 
                     /** @phpstan-ignore-next-line */
-                    $returnValueOrThrown->{self::ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY} = $spanSubtype;
+                    $returnValueOrThrown->{self::$ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY} = $spanSubtype;
                 };
             }
         );
     }
 
-    private function pdoStatementExecute(RegistrationContextInterface $ctx): void
+    private function pdoStatementExecute(RegistrationContextInterface $ctx)
     {
         $ctx->interceptCallsToMethod(
             'PDOStatement',
@@ -303,9 +303,9 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
              *
              */
             function (
-                ?object $interceptedCallThis,
+                $interceptedCallThis = null,
                 /** @noinspection PhpUnusedParameterInspection */ array $interceptedCallArgs
-            ): ?callable {
+            ) {
                 $statement = (
                     $interceptedCallThis instanceof PDOStatement
                     && isset($interceptedCallThis->queryString)
@@ -316,8 +316,8 @@ final class PdoAutoInstrumentation extends AutoInstrumentationBase
 
                 $spanSubtype = $this->getDynamicallyAttachedProperty(
                     $interceptedCallThis,
-                    self::ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY,
-                    Constants::SPAN_TYPE_DB_SUBTYPE_UNKNOWN /* <- defaultValue */
+                    self::$ELASTIC_APM_DB_SPAN_SUBTYPE_ADDED_PROPERTY,
+                    Constants::$SPAN_TYPE_DB_SUBTYPE_UNKNOWN /* <- defaultValue */
                 );
 
                 $span = $this->beginDbSpan($statement ?? 'PDOStatement->execute', $spanSubtype, $statement);

@@ -48,7 +48,7 @@ final class Snapshot implements LoggableInterface
     //
     //      2) Add
     //
-    //              public const MY_NEW_OPTION = 'my_new_option';
+    //              public static MY_NEW_OPTION = 'my_new_option';
     //
     //         to class \Elastic\Apm\Impl\Config\OptionNames
     //
@@ -104,13 +104,13 @@ final class Snapshot implements LoggableInterface
     /** @var bool */
     private $breakdownMetrics;
 
-    /** @var ?WildcardListMatcher */
+    /** @var WildcardListMatcher */
     private $devInternal;
 
     /** @var SnapshotDevInternal */
     private $devInternalParsed;
 
-    /** @var ?WildcardListMatcher */
+    /** @var WildcardListMatcher */
     private $disableInstrumentations;
 
     /** @var bool */
@@ -119,19 +119,19 @@ final class Snapshot implements LoggableInterface
     /** @var bool */
     private $enabled;
 
-    /** @var ?string */
+    /** @var string */
     private $environment;
 
-    /** @var ?string */
+    /** @var string */
     private $hostname;
 
-    /** @var ?int */
+    /** @var int */
     private $logLevel;
 
-    /** @var ?int */
+    /** @var int */
     private $logLevelStderr;
 
-    /** @var ?int */
+    /** @var int */
     private $logLevelSyslog;
 
     /** @var string */
@@ -140,16 +140,16 @@ final class Snapshot implements LoggableInterface
     /** @var float - In milliseconds */
     private $serverTimeout;
 
-    /** @var ?string */
+    /** @var string */
     private $serviceName;
 
-    /** @var ?string */
+    /** @var string */
     private $serviceNodeName;
 
-    /** @var ?string */
+    /** @var string */
     private $serviceVersion;
 
-    /** @var ?WildcardListMatcher */
+    /** @var WildcardListMatcher */
     private $transactionIgnoreUrls;
 
     /** @var int */
@@ -158,7 +158,7 @@ final class Snapshot implements LoggableInterface
     /** @var float */
     private $transactionSampleRate;
 
-    /** @var ?WildcardListMatcher */
+    /** @var WildcardListMatcher */
     private $urlGroups = null;
 
     /** @var bool */
@@ -200,7 +200,7 @@ final class Snapshot implements LoggableInterface
         return $this->devInternalParsed;
     }
 
-    public function disableInstrumentations(): ?WildcardListMatcher
+    public function disableInstrumentations(): WildcardListMatcher
     {
         return $this->disableInstrumentations;
     }
@@ -215,21 +215,21 @@ final class Snapshot implements LoggableInterface
         return $this->enabled;
     }
 
-    public function environment(): ?string
+    public function environment(): string
     {
         return $this->environment;
     }
 
-    public function hostname(): ?string
+    public function hostname(): string
     {
         return $this->hostname;
     }
 
     public function effectiveLogLevel(): int
     {
-        $effectiveLogLevelStderr = ($this->logLevelStderr ?? $this->logLevel) ?? LogLevel::INFO;
-        $effectiveLogLevelSyslog = ($this->logLevelSyslog ?? $this->logLevel) ?? LogLevel::CRITICAL;
-        return max($effectiveLogLevelStderr, $effectiveLogLevelSyslog, $this->logLevel ?? LogLevel::OFF);
+        $effectiveLogLevelStderr = ($this->logLevelStderr ?? $this->logLevel) ?? LogLevel::$INFO;
+        $effectiveLogLevelSyslog = ($this->logLevelSyslog ?? $this->logLevel) ?? LogLevel::$CRITICAL;
+        return max($effectiveLogLevelStderr, $effectiveLogLevelSyslog, $this->logLevel ?? LogLevel::$OFF);
     }
 
     public function serverTimeout(): float
@@ -237,22 +237,22 @@ final class Snapshot implements LoggableInterface
         return $this->serverTimeout;
     }
 
-    public function serviceName(): ?string
+    public function serviceName(): string
     {
         return $this->serviceName;
     }
 
-    public function serviceNodeName(): ?string
+    public function serviceNodeName(): string
     {
         return $this->serviceNodeName;
     }
 
-    public function serviceVersion(): ?string
+    public function serviceVersion(): string
     {
         return $this->serviceVersion;
     }
 
-    public function transactionIgnoreUrls(): ?WildcardListMatcher
+    public function transactionIgnoreUrls(): WildcardListMatcher
     {
         return $this->transactionIgnoreUrls;
     }
@@ -267,12 +267,12 @@ final class Snapshot implements LoggableInterface
         return $this->transactionSampleRate;
     }
 
-    public function urlGroups(): ?WildcardListMatcher
+    public function urlGroups(): WildcardListMatcher
     {
         return $this->urlGroups;
     }
     
-    public function globalLabels(): ?string
+    public function globalLabels(): string
     {
         return $this->globalLabels;
     }

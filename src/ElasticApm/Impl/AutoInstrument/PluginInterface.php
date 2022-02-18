@@ -25,7 +25,7 @@ namespace Elastic\Apm\Impl\AutoInstrument;
 
 interface PluginInterface
 {
-    public function register(RegistrationContextInterface $ctx): void;
+    public function register(RegistrationContextInterface $ctx);
 
     public function getDescription(): string;
 }

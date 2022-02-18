@@ -47,8 +47,8 @@ interface TracerInterface
     public function beginCurrentTransaction(
         string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface;
 
     /**
@@ -68,8 +68,8 @@ interface TracerInterface
         string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     );
 
     /**
@@ -93,8 +93,8 @@ interface TracerInterface
     public function beginTransaction(
         string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface;
 
     /**
@@ -118,8 +118,8 @@ interface TracerInterface
         string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     );
 
     /**
@@ -145,7 +145,7 @@ interface TracerInterface
      *
      * @see ElasticApm::createErrorFromThrowable
      */
-    public function createErrorFromThrowable(Throwable $throwable): ?string;
+    public function createErrorFromThrowable(Throwable $throwable): string;
 
     /**
      * Reports error event based on the given
@@ -156,7 +156,7 @@ interface TracerInterface
      *
      * @see ElasticApm::createCustomError
      */
-    public function createCustomError(CustomErrorData $customErrorData): ?string;
+    public function createCustomError(CustomErrorData $customErrorData): string;
 
     /**
      * Returns true if this Tracer is a no-op (for example because Elastic APM is disabled)
@@ -166,12 +166,12 @@ interface TracerInterface
     /**
      * @see ElasticApm::pauseRecording()
      */
-    public function pauseRecording(): void;
+    public function pauseRecording();
 
     /**
      * @see ElasticApm::resumeRecording()
      */
-    public function resumeRecording(): void;
+    public function resumeRecording();
 
     /**
      * Returns true if this Tracer has recording on i.e., not paused
@@ -183,7 +183,7 @@ interface TracerInterface
      *
      * @see ServiceAgentData::ephemeralId
      */
-    public function setAgentEphemeralId(?string $ephemeralId): void;
+    public function setAgentEphemeralId(string $ephemeralId);
 
     /**
      * @deprecated      Deprecated since version 1.3 - use injectDistributedTracingHeaders() instead
@@ -198,11 +198,11 @@ interface TracerInterface
      *
      * $headerInjector is callback to inject headers with signature
      *
-     *      (string $headerName, string $headerValue): void
+     *      (string $headerName, string $headerValue)
      *
      * @param Closure $headerInjector Callback that actually injects header(s) for the underlying transport
      *
-     * @phpstan-param Closure(string, string): void $headerInjector
+     * @phpstan-param Closure(string, string) $headerInjector
      */
-    public function injectDistributedTracingHeaders(Closure $headerInjector): void;
+    public function injectDistributedTracingHeaders(Closure $headerInjector);
 }

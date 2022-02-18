@@ -41,10 +41,10 @@ final class TransactionContextRequestData implements OptionalSerializableDataInt
 {
     use LoggableTrait;
 
-    public const UNKNOWN_METHOD = 'UNKNOWN HTTP METHOD';
+    public static $UNKNOWN_METHOD = 'UNKNOWN HTTP METHOD';
 
     /**
-     * @var ?string
+     * @var string
      *
      * HTTP method
      *
@@ -75,7 +75,7 @@ final class TransactionContextRequestData implements OptionalSerializableDataInt
          * "required": ["url", "method"]
          */
         if ($this->method === null) {
-            $this->method = self::UNKNOWN_METHOD;
+            $this->method = self::$UNKNOWN_METHOD;
         }
 
         if ($this->url === null) {

@@ -39,27 +39,27 @@ final class NoopSpan extends NoopExecutionSegment implements SpanInterface
     /** @inheritDoc */
     public function getTransactionId(): string
     {
-        return NoopTransaction::ID;
+        return NoopTransaction::$ID;
     }
 
     /** @inheritDoc */
     public function getParentId(): string
     {
-        return NoopTransaction::ID;
+        return NoopTransaction::$ID;
     }
 
     /** @inheritDoc */
-    public function setSubtype(?string $subtype): void
+    public function setSubtype(string $subtype)
     {
     }
 
     /** @inheritDoc */
-    public function setAction(?string $action): void
+    public function setAction(string $action)
     {
     }
 
     /** @inheritDoc */
-    public function endSpanEx(int $numberOfStackFramesToSkip, ?float $duration = null): void
+    public function endSpanEx(int $numberOfStackFramesToSkip, float $duration = null)
     {
     }
 

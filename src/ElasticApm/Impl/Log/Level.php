@@ -34,27 +34,27 @@ final class Level
 {
     use StaticClassTrait;
 
-    public const OFF = 0;
-    public const CRITICAL = self::OFF + 1;
-    public const ERROR = self::CRITICAL + 1;
-    public const WARNING = self::ERROR + 1;
-    public const INFO = self::WARNING + 1;
-    public const DEBUG = self::INFO + 1;
-    public const TRACE = self::DEBUG + 1;
+    public static  $OFF = 0;
+    public static  $CRITICAL = 1;
+    public static  $ERROR = 2;
+    public static  $WARNING = 3;
+    public static  $INFO = 4;
+    public static  $DEBUG = 5;
+    public static  $TRACE = 6;
 
     /**
      * @var array<array<string|int>>
      * @phpstan-var array<array{string, int}>
      */
-    private static $nameIntPairs
+    public static   $nameIntPairs
         = [
-            ['OFF', Level::OFF],
-            ['CRITICAL', Level::CRITICAL],
-            ['ERROR', Level::ERROR],
-            ['WARNING', Level::WARNING],
-            ['INFO', Level::INFO],
-            ['DEBUG', Level::DEBUG],
-            ['TRACE', Level::TRACE],
+            ['OFF', 0],
+            ['CRITICAL', 1],
+            ['ERROR', 2],
+            ['WARNING', 3],
+            ['INFO', 4],
+            ['DEBUG', 5],
+            ['TRACE', 6]
         ];
 
     /** @var array<int, string> */

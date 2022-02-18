@@ -35,7 +35,7 @@ final class ElasticApm
 {
     use StaticClassTrait;
 
-    public const VERSION = '1.4';
+    public static $VERSION = '1.4';
 
     /**
      * Begins a new transaction and sets it as the current transaction.
@@ -55,8 +55,8 @@ final class ElasticApm
     public static function beginCurrentTransaction(
         string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface {
         return GlobalTracerHolder::get()->beginCurrentTransaction($name, $type, $timestamp, $serializedDistTracingData);
     }
@@ -86,8 +86,8 @@ final class ElasticApm
         string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ) {
         return GlobalTracerHolder::get()->captureCurrentTransaction(
             $name,
@@ -138,8 +138,8 @@ final class ElasticApm
     public static function beginTransaction(
         string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface {
         return GlobalTracerHolder::get()->beginTransaction($name, $type, $timestamp, $serializedDistTracingData);
     }
@@ -169,8 +169,8 @@ final class ElasticApm
         string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ) {
         return GlobalTracerHolder::get()->captureTransaction(
             $name,
@@ -209,7 +209,7 @@ final class ElasticApm
      *
      * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/errors/error.json
      */
-    public static function createErrorFromThrowable(Throwable $throwable): ?string
+    public static function createErrorFromThrowable(Throwable $throwable)
     {
         return GlobalTracerHolder::get()->createErrorFromThrowable($throwable);
     }
@@ -225,7 +225,7 @@ final class ElasticApm
      *
      * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/errors/error.json
      */
-    public static function createCustomError(CustomErrorData $customErrorData): ?string
+    public static function createCustomError(CustomErrorData $customErrorData)
     {
         return GlobalTracerHolder::get()->createCustomError($customErrorData);
     }
@@ -233,7 +233,7 @@ final class ElasticApm
     /**
      * Pauses recording
      */
-    public static function pauseRecording(): void
+    public static function pauseRecording()
     {
         GlobalTracerHolder::get()->pauseRecording();
     }
@@ -241,7 +241,7 @@ final class ElasticApm
     /**
      * Resumes recording
      */
-    public static function resumeRecording(): void
+    public static function resumeRecording()
     {
         GlobalTracerHolder::get()->resumeRecording();
     }

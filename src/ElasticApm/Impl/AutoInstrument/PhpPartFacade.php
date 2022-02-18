@@ -59,7 +59,7 @@ final class PhpPartFacade
     private function __construct(float $requestInitStartTime)
     {
         if (!ElasticApmExtensionUtil::isLoaded()) {
-            throw new RuntimeException(ElasticApmExtensionUtil::EXTENSION_NAME . ' extension is not loaded');
+            throw new RuntimeException(ElasticApmExtensionUtil::$EXTENSION_NAME . ' extension is not loaded');
         }
 
         $tracer = self::buildTracer();
@@ -86,7 +86,7 @@ final class PhpPartFacade
      *
      * @return bool
      */
-    public static function bootstrap(int $maxEnabledLogLevel, float $requestInitStartTime): bool
+    public static  function bootstrap(int $maxEnabledLogLevel, float $requestInitStartTime): bool
     {
         BootstrapStageLogger::configure($maxEnabledLogLevel);
         BootstrapStageLogger::logDebug(
@@ -146,7 +146,7 @@ final class PhpPartFacade
      */
     public static function interceptedCallPreHook(
         int $interceptRegistrationId,
-        ?object $thisObj,
+        $thisObj,
         ...$interceptedCallArgs
     ): bool {
         $interceptionManager = self::singletonInstance()->interceptionManager;
@@ -169,7 +169,7 @@ final class PhpPartFacade
      * @param bool  $hasExitedByException
      * @param mixed $returnValueOrThrown
      */
-    public static function interceptedCallPostHook(bool $hasExitedByException, $returnValueOrThrown): void
+    public static function interceptedCallPostHook(bool $hasExitedByException, $returnValueOrThrown)
     {
         $interceptionManager = self::singletonInstance()->interceptionManager;
         assert($interceptionManager !== null);
@@ -186,7 +186,7 @@ final class PhpPartFacade
      *
      * @noinspection PhpUnused
      */
-    public static function shutdown(): void
+    public static function shutdown()
     {
         BootstrapStageLogger::logDebug('Starting shutdown sequence...', __LINE__, __FUNCTION__);
 
@@ -215,7 +215,7 @@ final class PhpPartFacade
         BootstrapStageLogger::logDebug('Successfully completed shutdown sequence', __LINE__, __FUNCTION__);
     }
 
-    private function shutdownImpl(): void
+    private function shutdownImpl()
     {
         if (!is_null($this->transactionForExtensionRequest)) {
             $this->transactionForExtensionRequest->onShutdown();
@@ -225,7 +225,7 @@ final class PhpPartFacade
     /**
      * @return Tracer|null
      */
-    private static function buildTracer(): ?Tracer
+    private static function buildTracer(): Tracer
     {
         ($assertProxy = Assert::ifEnabled())
         && $assertProxy->that(!GlobalTracerHolder::isSet())

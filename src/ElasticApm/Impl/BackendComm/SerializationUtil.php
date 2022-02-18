@@ -68,7 +68,7 @@ final class SerializationUtil
      *
      * @return void
      */
-    private static function assertNotExists(string $name, $value, array $nameToValue): void
+    private static function assertNotExists(string $name, $value, array $nameToValue)
     {
         if (self::$isInTestingContext && array_key_exists($name, $nameToValue)) {
             throw new SerializationException(
@@ -87,7 +87,7 @@ final class SerializationUtil
      *
      * @return void
      */
-    public static function addNameValue(string $name, $value, array &$nameToValue): void
+    public static function addNameValue(string $name, $value, array &$nameToValue)
     {
         self::assertNotExists($name, $value, $nameToValue);
 
@@ -101,7 +101,7 @@ final class SerializationUtil
      *
      * @return void
      */
-    public static function addNameValueIfNotNull(string $name, $value, array &$nameToValue): void
+    public static function addNameValueIfNotNull(string $name, $value, array &$nameToValue)
     {
         self::assertNotExists($name, $value, $nameToValue);
 
@@ -117,7 +117,7 @@ final class SerializationUtil
      *
      * @return void
      */
-    public static function addNameValueIfNotEmpty(string $name, $value, array &$nameToValue): void
+    public static function addNameValueIfNotEmpty(string $name, $value, array &$nameToValue)
     {
         self::assertNotExists($name, $value, $nameToValue);
 
@@ -126,7 +126,7 @@ final class SerializationUtil
         }
     }
 
-    public static function prepareForSerialization(?OptionalSerializableDataInterface &$value): bool
+    public static function prepareForSerialization(OptionalSerializableDataInterface &$value = null): bool
     {
         if ($value === null) {
             return false;

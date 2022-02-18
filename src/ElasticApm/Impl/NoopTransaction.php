@@ -39,18 +39,18 @@ final class NoopTransaction extends NoopExecutionSegment implements TransactionI
     use NoopObjectTrait;
 
     /** @inheritDoc */
-    public function getParentId(): ?string
+    public function getParentId(): string
     {
-        return null;
+        return "";
     }
 
     /** @inheritDoc */
     public function beginCurrentSpan(
         string $name,
         string $type,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ): SpanInterface {
         return NoopSpan::singletonInstance();
     }
@@ -60,9 +60,9 @@ final class NoopTransaction extends NoopExecutionSegment implements TransactionI
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ) {
         return $callback(NoopSpan::singletonInstance());
     }
@@ -74,14 +74,14 @@ final class NoopTransaction extends NoopExecutionSegment implements TransactionI
     }
 
     /** @inheritDoc */
-    public function setResult(?string $result): void
+    public function setResult(string $result)
     {
     }
 
     /** @inheritDoc */
-    public function getResult(): ?string
+    public function getResult(): string
     {
-        return null;
+        return "";
     }
 
     /** @inheritDoc */
@@ -99,6 +99,6 @@ final class NoopTransaction extends NoopExecutionSegment implements TransactionI
     /** @inheritDoc */
     public function ensureParentId(): string
     {
-        return NoopExecutionSegment::ID;
+        return NoopExecutionSegment::$ID;
     }
 }

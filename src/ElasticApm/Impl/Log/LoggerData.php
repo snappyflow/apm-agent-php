@@ -59,7 +59,7 @@ final class LoggerData
         string $fqClassName,
         string $srcCodeFile,
         Backend $backend,
-        ?LoggerData $inheritedData
+        LoggerData $inheritedData = null
     ) {
         $this->category = $category;
         $this->namespace = $namespace;

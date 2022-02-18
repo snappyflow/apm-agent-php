@@ -45,7 +45,7 @@ class LeafData implements LoggableInterface
     /** @var float */
     public $sumMicroseconds;
 
-    public function add(float $selfTimeInMicroseconds): void
+    public function add(float $selfTimeInMicroseconds)
     {
         ++$this->count;
         $this->sumMicroseconds += $selfTimeInMicroseconds;

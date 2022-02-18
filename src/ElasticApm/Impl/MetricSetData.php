@@ -51,7 +51,7 @@ class MetricSetData implements SerializableDataInterface, LoggableInterface
     public $timestamp;
 
     /**
-     * @var ?string
+     * @var string
      *
      * @see  TransactionInterface::setName() For the description.
      *
@@ -60,7 +60,7 @@ class MetricSetData implements SerializableDataInterface, LoggableInterface
     public $transactionName = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * @see  TransactionInterface::setType() For the description.
      *
@@ -69,7 +69,7 @@ class MetricSetData implements SerializableDataInterface, LoggableInterface
     public $transactionType = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * @see  SpanInterface::setType() For the description.
      *
@@ -78,7 +78,7 @@ class MetricSetData implements SerializableDataInterface, LoggableInterface
     public $spanType = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * @see  SpanInterface::setSubtype() For the description.
      *
@@ -97,7 +97,7 @@ class MetricSetData implements SerializableDataInterface, LoggableInterface
      * @param string    $key
      * @param float|int $value
      */
-    public function setSample(string $key, $value): void
+    public function setSample(string $key, $value)
     {
         if (array_key_exists($key, $this->samples)) {
             $this->samples[$key] = ['value' => $value];
@@ -116,7 +116,7 @@ class MetricSetData implements SerializableDataInterface, LoggableInterface
         return array_key_exists($key, $this->samples) ? $this->samples[$key]['value'] : null;
     }
 
-    public function clearSamples(): void
+    public function clearSamples()
     {
         $this->samples = [];
     }

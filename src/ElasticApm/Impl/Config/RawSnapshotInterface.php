@@ -30,5 +30,5 @@ namespace Elastic\Apm\Impl\Config;
  */
 interface RawSnapshotInterface
 {
-    public function valueFor(string $optionName): ?string;
+    public function valueFor(string $optionName);
 }

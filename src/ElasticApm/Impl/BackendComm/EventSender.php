@@ -51,7 +51,7 @@ final class EventSender implements EventSinkInterface
     public function __construct(ConfigSnapshot $config, LoggerFactory $loggerFactory)
     {
         $this->config = $config;
-        $this->logger = $loggerFactory->loggerForClass(LogCategory::BACKEND_COMM, __NAMESPACE__, __CLASS__, __FILE__);
+        $this->logger = $loggerFactory->loggerForClass(LogCategory::$BACKEND_COMM, __NAMESPACE__, __CLASS__, __FILE__);
         $this->logger->addContext('this', $this);
     }
 
@@ -60,9 +60,9 @@ final class EventSender implements EventSinkInterface
         Metadata $metadata,
         array $spansData,
         array $errorsData,
-        ?BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
-        ?TransactionData $transactionData
-    ): void {
+        BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
+        TransactionData $transactionData
+    ) {
         $serializedMetadata = '{"metadata":';
         $serializedMetadata .= SerializationUtil::serializeAsJson($metadata);
         $serializedMetadata .= "}";
@@ -116,7 +116,7 @@ final class EventSender implements EventSinkInterface
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
                 'Dropping events because '
-                . OptionNames::DEV_INTERNAL . ' sub-option ' . DevInternalSubOptionNames::DROP_EVENTS_BEFORE_SEND_C_CODE
+                . OptionNames::$DEV_INTERNAL . ' sub-option ' . DevInternalSubOptionNames::$DROP_EVENTS_BEFORE_SEND_C_CODE
                 . ' is set'
             );
         } else {

@@ -41,7 +41,7 @@ final class TransactionContextRequestUrlData implements OptionalSerializableData
     use LoggableTrait;
 
     /**
-     * @var ?string
+     * @var string
      *
      * The hostname of the request, e.g. 'example.com'
      *
@@ -52,7 +52,7 @@ final class TransactionContextRequestUrlData implements OptionalSerializableData
     public $domain = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * The full, possibly agent-assembled URL of the request
      *
@@ -63,7 +63,7 @@ final class TransactionContextRequestUrlData implements OptionalSerializableData
     public $full = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * The raw, unparsed URL of the HTTP request line, e.g https://example.com:443/search?q=elasticsearch.
      * This URL may be absolute or relative.
@@ -76,7 +76,7 @@ final class TransactionContextRequestUrlData implements OptionalSerializableData
     public $original = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * The path of the request, e.g. '/search'
      *
@@ -87,7 +87,7 @@ final class TransactionContextRequestUrlData implements OptionalSerializableData
     public $path = null;
 
     /**
-     * @var ?int
+     * @var int
      *
      * The port of the request, e.g. 443
      *
@@ -96,7 +96,7 @@ final class TransactionContextRequestUrlData implements OptionalSerializableData
     public $port = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * The protocol of the request, e.g. 'http'
      *
@@ -107,7 +107,7 @@ final class TransactionContextRequestUrlData implements OptionalSerializableData
     public $protocol = null;
 
     /**
-     * @var ?string
+     * @var string
      *
      * Contains the query string information of the request.
      * It is expected to have values delimited by ampersands.

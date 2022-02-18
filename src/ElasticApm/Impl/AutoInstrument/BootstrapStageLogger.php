@@ -35,7 +35,7 @@ final class BootstrapStageLogger
     /** @var int */
     private static $maxEnabledLevel;
 
-    public static function configure(int $maxEnabledLevel): void
+    public static function configure(int $maxEnabledLevel)
     {
         self::$maxEnabledLevel = $maxEnabledLevel;
     }
@@ -44,7 +44,7 @@ final class BootstrapStageLogger
         string $message,
         int $srcCodeLine,
         string $srcCodeFunc
-    ): void {
+    ) {
         /** @noinspection PhpUndefinedConstantInspection */
         self::logLevel(
         /**
@@ -59,11 +59,11 @@ final class BootstrapStageLogger
         );
     }
 
-    public static function logDebug(
+    public static  function logDebug(
         string $message,
         int $srcCodeLine,
         string $srcCodeFunc
-    ): void {
+    ) {
         /** @noinspection PhpUndefinedConstantInspection */
         self::logLevel(
         /**
@@ -78,11 +78,11 @@ final class BootstrapStageLogger
         );
     }
 
-    public static function logWarning(
+    public static  function logWarning(
         string $message,
         int $srcCodeLine,
         string $srcCodeFunc
-    ): void {
+    ) {
         /** @noinspection PhpUndefinedConstantInspection */
         self::logLevel(
         /**
@@ -97,11 +97,11 @@ final class BootstrapStageLogger
         );
     }
 
-    public static function logCritical(
+    public static  function logCritical(
         string $message,
         int $srcCodeLine,
         string $srcCodeFunc
-    ): void {
+    ) {
         /** @noinspection PhpUndefinedConstantInspection */
         self::logLevel(
         /**
@@ -116,12 +116,12 @@ final class BootstrapStageLogger
         );
     }
 
-    public static function logCriticalThrowable(
+    public static  function logCriticalThrowable(
         Throwable $throwable,
         string $message,
         int $srcCodeLine,
         string $srcCodeFunc
-    ): void {
+    ) {
         self::logCritical(
             $message . '.'
             . ' ' . get_class($throwable) . ': ' . $throwable->getMessage()
@@ -136,7 +136,7 @@ final class BootstrapStageLogger
         string $message,
         int $srcCodeLine,
         string $srcCodeFunc
-    ): void {
+    ) {
         if (self::$maxEnabledLevel < $statementLevel) {
             return;
         }

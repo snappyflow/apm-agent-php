@@ -45,8 +45,8 @@ final class DurationOptionParser extends OptionParser
     private $defaultUnits;
 
     public function __construct(
-        ?float $minValidValueInMilliseconds,
-        ?float $maxValidValueInMilliseconds,
+        float $minValidValueInMilliseconds,
+        float $maxValidValueInMilliseconds = null,
         int $defaultUnits
     ) {
         $this->minValidValueInMilliseconds = $minValidValueInMilliseconds;
@@ -98,17 +98,17 @@ final class DurationOptionParser extends OptionParser
         return $this->defaultUnits;
     }
 
-    public function minValidValueInMilliseconds(): ?float
+    public function minValidValueInMilliseconds(): float
     {
         return $this->minValidValueInMilliseconds;
     }
 
-    public function maxValidValueInMilliseconds(): ?float
+    public function maxValidValueInMilliseconds(): float
     {
         return $this->maxValidValueInMilliseconds;
     }
 
-    private static function splitToValueAndUnits(string $rawValue, string &$partWithoutSuffix, int &$units): void
+    private static function splitToValueAndUnits(string $rawValue, string &$partWithoutSuffix, int &$units)
     {
         foreach (DurationUnits::$suffixAndIdPairs as $suffixAndIdPair) {
             $suffix = $suffixAndIdPair[0];
@@ -124,13 +124,13 @@ final class DurationOptionParser extends OptionParser
     public static function convertToMilliseconds(float $srcValue, int $srcValueUnits): float
     {
         switch ($srcValueUnits) {
-            case DurationUnits::MILLISECONDS:
+            case DurationUnits::$MILLISECONDS:
                 return $srcValue;
 
-            case DurationUnits::SECONDS:
+            case DurationUnits::$SECONDS:
                 return $srcValue * 1000;
 
-            case DurationUnits::MINUTES:
+            case DurationUnits::$MINUTES:
                 return $srcValue * 60 * 1000;
 
             default:

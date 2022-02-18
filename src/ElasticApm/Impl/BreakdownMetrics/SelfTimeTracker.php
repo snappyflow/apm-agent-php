@@ -55,7 +55,7 @@ class SelfTimeTracker implements LoggableInterface
         $this->startTimer($monotonicClockNow);
     }
 
-    public function onChildBegin(float $monotonicClockNow): void
+    public function onChildBegin(float $monotonicClockNow)
     {
         if ($this->runningChildrenCount === 0) {
             $this->stopTimer($monotonicClockNow);
@@ -64,7 +64,7 @@ class SelfTimeTracker implements LoggableInterface
         ++$this->runningChildrenCount;
     }
 
-    public function onChildEnd(float $monotonicClockNow): void
+    public function onChildEnd(float $monotonicClockNow)
     {
         --$this->runningChildrenCount;
 
@@ -73,19 +73,19 @@ class SelfTimeTracker implements LoggableInterface
         }
     }
 
-    public function end(float $monotonicClockNow): void
+    public function end(float $monotonicClockNow)
     {
         if ($this->runningChildrenCount === 0) {
             $this->stopTimer($monotonicClockNow);
         }
     }
 
-    private function startTimer(float $monotonicClockNow): void
+    private function startTimer(float $monotonicClockNow)
     {
         $this->currentSelfTimeSegmentBeginTime = $monotonicClockNow;
     }
 
-    private function stopTimer(float $monotonicClockNow): void
+    private function stopTimer(float $monotonicClockNow)
     {
         $this->accumulatedSelfTimeInMicroseconds
             += TimeUtil::calcDurationInMicroseconds($this->currentSelfTimeSegmentBeginTime, $monotonicClockNow);

@@ -53,8 +53,8 @@ final class ExceptionUtil
         if ($numberOfStackTraceFramesToSkip !== PHP_INT_MAX) {
             $stacktrace = LoggablePhpStacktrace::buildForCurrent($numberOfStackTraceFramesToSkip + 1);
             $messageSuffixObj->addProperties(
-                [LoggablePhpStacktrace::STACK_TRACE_KEY => $stacktrace],
-                PropertyLogPriority::MUST_BE_INCLUDED
+                [LoggablePhpStacktrace::$STACK_TRACE_KEY => $stacktrace],
+                PropertyLogPriority::$MUST_BE_INCLUDED
             );
         }
         $messageSuffix = LoggableToString::convert($messageSuffixObj, /* prettyPrint */ true);

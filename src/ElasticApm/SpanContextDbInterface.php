@@ -34,5 +34,5 @@ interface SpanContextDbInterface
      *
      * @return void
      */
-    public function setStatement(?string $statement): void;
+    public function setStatement(string $statement);
 }

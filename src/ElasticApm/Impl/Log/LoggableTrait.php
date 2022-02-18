@@ -33,9 +33,9 @@ use ReflectionException;
  */
 trait LoggableTrait
 {
-    protected static function classNameToLog(): ?string
+    protected static function classNameToLog(): string
     {
-        return null;
+        return "";
     }
 
     /**
@@ -50,13 +50,13 @@ trait LoggableTrait
      * @param LogStreamInterface   $stream
      * @param array<string, mixed> $customPropValues
      */
-    protected function toLogLoggableTraitImpl(LogStreamInterface $stream, array $customPropValues = []): void
+    protected function toLogLoggableTraitImpl(LogStreamInterface $stream, array $customPropValues = [])
     {
         $nameToValue = $customPropValues;
 
         $classNameToLog = static::classNameToLog();
         if (!is_null($classNameToLog)) {
-            $nameToValue[LogConsts::TYPE_KEY] = $classNameToLog;
+            $nameToValue[LogConsts::$TYPE_KEY] = $classNameToLog;
         }
 
         try {
@@ -94,7 +94,7 @@ trait LoggableTrait
         $stream->toLogAs($nameToValue);
     }
 
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
         $this->toLogLoggableTraitImpl($stream);
     }

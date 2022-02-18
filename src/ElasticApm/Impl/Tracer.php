@@ -91,13 +91,13 @@ final class Tracer implements TracerInterface, LoggableInterface
         $this->logBackend = new LogBackend($this->config->effectiveLogLevel(), $providedDependencies->logSink);
         $this->loggerFactory = new LoggerFactory($this->logBackend);
         $this->logger = $this->loggerFactory
-            ->loggerForClass(LogCategory::PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)->addContext('this', $this);
+            ->loggerForClass(LogCategory::$PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)->addContext('this', $this);
 
         ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
         && $loggerProxy->log(
             'Constructing Tracer...',
             [
-                'Version of agent PHP part' => ElasticApm::VERSION,
+                'Version of agent PHP part' => ElasticApm::$VERSION,
                 'PHP_VERSION'               => PHP_VERSION,
                 'providedDependencies'      => $providedDependencies,
                 'effectiveLogLevel'         => LogLevel::intToName($this->config->effectiveLogLevel()),
@@ -127,8 +127,8 @@ final class Tracer implements TracerInterface, LoggableInterface
     private function newTransactionBuilder(
         string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionBuilder {
         $builder = new TransactionBuilder($this, $name, $type);
         $builder->timestamp = $timestamp;
@@ -140,8 +140,8 @@ final class Tracer implements TracerInterface, LoggableInterface
     public function beginCurrentTransaction(
         string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface {
         $builder = $this->newTransactionBuilder($name, $type, $timestamp, $serializedDistTracingData);
         $builder->asCurrent();
@@ -153,8 +153,8 @@ final class Tracer implements TracerInterface, LoggableInterface
         string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ) {
         $builder = $this->newTransactionBuilder($name, $type, $timestamp, $serializedDistTracingData);
         $builder->asCurrent();
@@ -177,7 +177,7 @@ final class Tracer implements TracerInterface, LoggableInterface
         return $this->currentTransaction->getCurrentExecutionSegment();
     }
 
-    public function resetCurrentTransaction(): void
+    public function resetCurrentTransaction()
     {
         $this->currentTransaction = null;
     }
@@ -186,8 +186,8 @@ final class Tracer implements TracerInterface, LoggableInterface
     public function beginTransaction(
         string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface {
         $builder = $this->newTransactionBuilder($name, $type, $timestamp, $serializedDistTracingData);
         return $this->beginTransactionWithBuilder($builder);
@@ -198,8 +198,8 @@ final class Tracer implements TracerInterface, LoggableInterface
         string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ) {
         $builder = $this->newTransactionBuilder($name, $type, $timestamp, $serializedDistTracingData);
         return $this->captureTransactionWithBuilder($builder, $callback);
@@ -259,18 +259,18 @@ final class Tracer implements TracerInterface, LoggableInterface
     }
 
     /** @inheritDoc */
-    public function createErrorFromThrowable(Throwable $throwable): ?string
+    public function createErrorFromThrowable(Throwable $throwable): string
     {
         return $this->dispatchCreateError(ErrorExceptionData::buildFromThrowable($this, $throwable));
     }
 
     /** @inheritDoc */
-    public function createCustomError(CustomErrorData $customErrorData): ?string
+    public function createCustomError(CustomErrorData $customErrorData): string
     {
         return $this->dispatchCreateError(ErrorExceptionData::buildFromCustomData($this, $customErrorData));
     }
 
-    private function dispatchCreateError(?ErrorExceptionData $errorExceptionData): ?string
+    private function dispatchCreateError(ErrorExceptionData $errorExceptionData): string
     {
         if (is_null($this->currentTransaction)) {
             return $this->doCreateError($errorExceptionData, /* transaction */ null, /* span */ null);
@@ -280,10 +280,10 @@ final class Tracer implements TracerInterface, LoggableInterface
     }
 
     public function doCreateError(
-        ?ErrorExceptionData $errorExceptionData,
-        ?Transaction $transaction,
-        ?Span $span
-    ): ?string {
+        ErrorExceptionData $errorExceptionData = null,
+        Transaction $transaction = null,
+        Span $span = null
+    ) {
         if (!$this->isRecording) {
             return null;
         }
@@ -327,10 +327,10 @@ final class Tracer implements TracerInterface, LoggableInterface
 
     public static function limitKeywordString(string $keywordString): string
     {
-        return TextUtil::ensureMaxLength($keywordString, Constants::KEYWORD_STRING_MAX_LENGTH);
+        return TextUtil::ensureMaxLength($keywordString, Constants::$KEYWORD_STRING_MAX_LENGTH);
     }
 
-    public static function limitNullableKeywordString(?string $keywordString): ?string
+    public static function limitNullableKeywordString(string $keywordString): string
     {
         if (is_null($keywordString)) {
             return null;
@@ -341,10 +341,10 @@ final class Tracer implements TracerInterface, LoggableInterface
 
     public function limitNonKeywordString(string $nonKeywordString): string
     {
-        return TextUtil::ensureMaxLength($nonKeywordString, Constants::NON_KEYWORD_STRING_MAX_LENGTH);
+        return TextUtil::ensureMaxLength($nonKeywordString, Constants::$NON_KEYWORD_STRING_MAX_LENGTH);
     }
 
-    public function limitNullableNonKeywordString(?string $nonKeywordString): ?string
+    public function limitNullableNonKeywordString(string $nonKeywordString)
     {
         if (is_null($nonKeywordString)) {
             return null;
@@ -364,13 +364,13 @@ final class Tracer implements TracerInterface, LoggableInterface
     }
 
     /** @inheritDoc */
-    public function pauseRecording(): void
+    public function pauseRecording()
     {
         $this->isRecording = false;
     }
 
     /** @inheritDoc */
-    public function resumeRecording(): void
+    public function resumeRecording()
     {
         $this->isRecording = true;
     }
@@ -384,15 +384,15 @@ final class Tracer implements TracerInterface, LoggableInterface
     /**
      * @param SpanData[]                      $spansData
      * @param ErrorData[]                     $errorsData
-     * @param ?BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction
-     * @param ?TransactionData                $transactionData
+     * @param BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction
+     * @param TransactionData                $transactionData
      */
     public function sendEventsToApmServer(
         array $spansData,
         array $errorsData,
-        ?BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
-        ?TransactionData $transactionData
-    ): void {
+        BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction = null,
+        TransactionData $transactionData = null
+    ) {
         $this->eventSink->consume(
             $this->currentMetadata,
             $spansData,
@@ -403,7 +403,7 @@ final class Tracer implements TracerInterface, LoggableInterface
     }
 
     /** @inheritDoc */
-    public function setAgentEphemeralId(?string $ephemeralId): void
+    public function setAgentEphemeralId(string $ephemeralId)
     {
         assert(isset($this->currentMetadata->service->agent));
         $this->currentMetadata->service->agent->ephemeralId = $this->limitNullableKeywordString($ephemeralId);
@@ -424,7 +424,7 @@ final class Tracer implements TracerInterface, LoggableInterface
     }
 
     /** @inheritDoc */
-    public function injectDistributedTracingHeaders(Closure $headerInjector): void
+    public function injectDistributedTracingHeaders(Closure $headerInjector)
     {
         if ($this->currentTransaction === null) {
             return;
@@ -437,7 +437,7 @@ final class Tracer implements TracerInterface, LoggableInterface
         }
     }
 
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
         $result = [
             'isRecording'          => $this->isRecording,
@@ -452,3 +452,4 @@ final class Tracer implements TracerInterface, LoggableInterface
         $stream->toLogAs($result);
     }
 }
+

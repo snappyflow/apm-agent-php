@@ -78,9 +78,9 @@ interface ExecutionSegmentInterface
     public function beginChildSpan(
         string $name,
         string $type,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ): SpanInterface;
 
     /**
@@ -110,9 +110,9 @@ interface ExecutionSegmentInterface
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     );
 
     /**
@@ -130,7 +130,7 @@ interface ExecutionSegmentInterface
      *
      * @param string $name
      */
-    public function setName(string $name): void;
+    public function setName(string $name);
 
     /**
      * Type is a keyword of specific relevance in the service's domain
@@ -145,7 +145,7 @@ interface ExecutionSegmentInterface
      *
      * @param string $type
      */
-    public function setType(string $type): void;
+    public function setType(string $type);
 
     /**
      * @deprecated      Deprecated since version 1.3 - use injectDistributedTracingHeaders() instead
@@ -153,20 +153,20 @@ interface ExecutionSegmentInterface
      *
      * Returns distributed tracing data
      */
-    public function getDistributedTracingData(): ?DistributedTracingData;
+    public function getDistributedTracingData();
 
     /**
      * Returns distributed tracing data for the current span/transaction
      *
      * $headerInjector is callback to inject headers with signature
      *
-     *      (string $headerName, string $headerValue): void
+     *      (string $headerName, string $headerValue)
      *
      * @param Closure $headerInjector Callback that actually injects header(s) for the underlying transport
      *
-     * @phpstan-param Closure(string, string): void $headerInjector
+     * @phpstan-param Closure(string, string) $headerInjector
      */
-    public function injectDistributedTracingHeaders(Closure $headerInjector): void;
+    public function injectDistributedTracingHeaders(Closure $headerInjector);
 
     /**
      * Sets the end timestamp and finalizes this object's state.
@@ -177,7 +177,7 @@ interface ExecutionSegmentInterface
      *
      * @param float|null $duration In milliseconds with 3 decimal points.
      */
-    public function end(?float $duration = null): void;
+    public function end(float $duration = null);
 
     /**
      * Returns true if this execution segment has already ended.
@@ -194,7 +194,7 @@ interface ExecutionSegmentInterface
      *
      * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/errors/error.json
      */
-    public function createErrorFromThrowable(Throwable $throwable): ?string;
+    public function createErrorFromThrowable(Throwable $throwable);
 
     /**
      * Creates an error based on the given Throwable instance with this execution segment as the parent.
@@ -206,7 +206,7 @@ interface ExecutionSegmentInterface
      *
      * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/errors/error.json
      */
-    public function createCustomError(CustomErrorData $customErrorData): ?string;
+    public function createCustomError(CustomErrorData $customErrorData);
 
     /**
      * The outcome of the transaction/span: success, failure, or unknown.
@@ -222,12 +222,12 @@ interface ExecutionSegmentInterface
      *
      * @return void
      */
-    public function setOutcome(?string $outcome): void;
+    public function setOutcome(string $outcome);
 
     /**
      * @see setOutcome() For the description
      */
-    public function getOutcome(): ?string;
+    public function getOutcome();
 
     /**
      * Returns true if this execution segment is a no-op (for example when recording is disabled).
@@ -237,5 +237,6 @@ interface ExecutionSegmentInterface
     /**
      * Discards this execution segment.
      */
-    public function discard(): void;
+    public function discard();
 }
+

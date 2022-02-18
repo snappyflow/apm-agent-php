@@ -32,7 +32,7 @@ final class ElasticApmExtensionUtil
 {
     use StaticClassTrait;
 
-    public const EXTENSION_NAME = 'elastic_apm';
+    public static $EXTENSION_NAME = 'elastic_apm';
 
     /** @var bool */
     private static $isLoaded;
@@ -40,7 +40,7 @@ final class ElasticApmExtensionUtil
     public static function isLoaded(): bool
     {
         if (!isset(self::$isLoaded)) {
-            self::$isLoaded = extension_loaded(self::EXTENSION_NAME);
+            self::$isLoaded = extension_loaded(self::$EXTENSION_NAME);
         }
 
         return self::$isLoaded;

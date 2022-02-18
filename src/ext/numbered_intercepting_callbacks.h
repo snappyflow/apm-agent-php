@@ -29,6 +29,10 @@ numberedInterceptingCallback( uint32_t index, zend_execute_data* execute_data, z
 {
     internalFunctionCallInterceptingImpl( /* interceptRegistrationId: */ index, execute_data, return_value );
 }
+#if PHP_VERSION_ID < 70200
+    typedef void (*zif_handler)(INTERNAL_FUNCTION_PARAMETERS);
+#endif
+
 
 #define ELASTIC_APM_NUMBERED_INTERCEPTING_CALLBACK_NAME( n ) ELASTIC_APM_PP_CONCAT( elasticApmNumberedInterceptingCallback_, n )
 

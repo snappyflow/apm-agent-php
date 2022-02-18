@@ -44,7 +44,7 @@ final class SpanContextDb extends ContextDataWrapper implements SpanContextDbInt
     }
 
     /** @inheritDoc */
-    public function setStatement(?string $statement): void
+    public function setStatement(string $statement)
     {
         if ($this->beforeMutating()) {
             return;

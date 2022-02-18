@@ -30,40 +30,40 @@ namespace Elastic\Apm\Impl;
  */
 final class Constants
 {
-    public const KEYWORD_STRING_MAX_LENGTH = 1024;
+    public static $KEYWORD_STRING_MAX_LENGTH = 1024;
 
-    public const NON_KEYWORD_STRING_MAX_LENGTH = 10 * 1024;
+    public static $NON_KEYWORD_STRING_MAX_LENGTH = 10 * 1024;
 
-    public const EXECUTION_SEGMENT_ID_SIZE_IN_BYTES = 8;
-    public const TRACE_ID_SIZE_IN_BYTES = 16;
-    public const ERROR_ID_SIZE_IN_BYTES = 16;
+    public static $EXECUTION_SEGMENT_ID_SIZE_IN_BYTES = 8;
+    public static $TRACE_ID_SIZE_IN_BYTES = 16;
+    public static $ERROR_ID_SIZE_IN_BYTES = 16;
 
-    public const TRANSACTION_TYPE_REQUEST = 'request';
-    public const TRANSACTION_TYPE_CLI = 'cli';
+    public static $TRANSACTION_TYPE_REQUEST = 'request';
+    public static $TRANSACTION_TYPE_CLI = 'cli';
 
-    public const SPAN_TYPE_DB = 'db';
-    public const SPAN_TYPE_EXTERNAL = 'external';
+    public static $SPAN_TYPE_DB = 'db';
+    public static $SPAN_TYPE_EXTERNAL = 'external';
 
-    public const SPAN_TYPE_DB_SUBTYPE_SQLITE = 'sqlite';
-    public const SPAN_TYPE_DB_SUBTYPE_MYSQL = 'mysql';
-    public const SPAN_TYPE_DB_SUBTYPE_ORACLE = 'oracle';
-    public const SPAN_TYPE_DB_SUBTYPE_POSTGRESQL = 'postgresql';
-    public const SPAN_TYPE_DB_SUBTYPE_MSSQL = 'mssql';
-    public const SPAN_TYPE_DB_SUBTYPE_IBM_DB2 = 'db2';
-    public const SPAN_TYPE_DB_SUBTYPE_ODBC = 'odbc';
-    public const SPAN_TYPE_DB_SUBTYPE_CUBRID = 'cubrid';
-    public const SPAN_TYPE_DB_SUBTYPE_FIREBIRD = 'firebird';
-    public const SPAN_TYPE_DB_SUBTYPE_INFORMIX = 'informix';
-    public const SPAN_TYPE_DB_SUBTYPE_UNKNOWN = 'unknown_DB';
+    public static $SPAN_TYPE_DB_SUBTYPE_SQLITE = 'sqlite';
+    public static $SPAN_TYPE_DB_SUBTYPE_MYSQL = 'mysql';
+    public static $SPAN_TYPE_DB_SUBTYPE_ORACLE = 'oracle';
+    public static $SPAN_TYPE_DB_SUBTYPE_POSTGRESQL = 'postgresql';
+    public static $SPAN_TYPE_DB_SUBTYPE_MSSQL = 'mssql';
+    public static $SPAN_TYPE_DB_SUBTYPE_IBM_DB2 = 'db2';
+    public static $SPAN_TYPE_DB_SUBTYPE_ODBC = 'odbc';
+    public static $SPAN_TYPE_DB_SUBTYPE_CUBRID = 'cubrid';
+    public static $SPAN_TYPE_DB_SUBTYPE_FIREBIRD = 'firebird';
+    public static $SPAN_TYPE_DB_SUBTYPE_INFORMIX = 'informix';
+    public static $SPAN_TYPE_DB_SUBTYPE_UNKNOWN = 'unknown_DB';
 
-    public const SPAN_ACTION_DB_QUERY = 'query';
+    public static $SPAN_ACTION_DB_QUERY = 'query';
 
-    public const SPAN_TYPE_EXTERNAL_SUBTYPE_HTTP = 'http';
+    public static $SPAN_TYPE_EXTERNAL_SUBTYPE_HTTP = 'http';
 
-    public const SPAN_TYPE_DB_ACTION_EXEC = 'exec';
-    public const SPAN_TYPE_DB_ACTION_QUERY = 'query';
+    public static $SPAN_TYPE_DB_ACTION_EXEC = 'exec';
+    public static $SPAN_TYPE_DB_ACTION_QUERY = 'query';
 
-    public const OUTCOME_SUCCESS = 'success';
-    public const OUTCOME_FAILURE = 'failure';
-    public const OUTCOME_UNKNOWN = 'unknown';
+    public static $OUTCOME_SUCCESS = 'success';
+    public static $OUTCOME_FAILURE = 'failure';
+    public static $OUTCOME_UNKNOWN = 'unknown';
 }

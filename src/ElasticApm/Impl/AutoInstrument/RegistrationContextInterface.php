@@ -36,7 +36,7 @@ interface RegistrationContextInterface
         string $className,
         string $methodName,
         callable $preHook
-    ): void;
+    );
 
     /**
      * @param string   $functionName
@@ -47,5 +47,5 @@ interface RegistrationContextInterface
     public function interceptCallsToFunction(
         string $functionName,
         callable $preHook
-    ): void;
+    );
 }

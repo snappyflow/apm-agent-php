@@ -33,14 +33,14 @@ final class AssertLevel
     use StaticClassTrait;
 
     /** @var int */
-    public const OFF = 0;
+    public static $OFF = 0;
 
     /** @var int */
-    public const O_1 = self::OFF + 1;
+    public static $O_1 = 1;
 
     /** @var int */
-    public const O_N = self::O_1 + 1;
+    public static $O_N = 2;
 
     /** @var int */
-    public const O_ALL = PHP_INT_MAX;
+    public static $O_ALL = PHP_INT_MAX;
 }

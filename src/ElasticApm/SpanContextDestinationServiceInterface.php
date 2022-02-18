@@ -39,7 +39,7 @@ interface SpanContextDestinationServiceInterface
      *
      * @return void
      */
-    public function setType(?string $type): void;
+    public function setType(string $type);
 
     /**
      * "Identifier for the destination service (e.g. 'http://elastic.co', 'elasticsearch', 'rabbitmq')
@@ -50,7 +50,7 @@ interface SpanContextDestinationServiceInterface
      *
      * @return void
      */
-    public function setName(?string $name): void;
+    public function setName(string $name);
 
     /**
      * Identifier for the destination service resource being operated on
@@ -62,5 +62,5 @@ interface SpanContextDestinationServiceInterface
      *
      * @return void
      */
-    public function setResource(?string $resource): void;
+    public function setResource(string $resource);
 }

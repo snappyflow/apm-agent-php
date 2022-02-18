@@ -65,7 +65,7 @@ class ErrorTransactionData implements SerializableDataInterface, LoggableInterfa
      */
     public $type;
 
-    public static function build(Transaction $transaction): ErrorTransactionData
+    public static  function build(Transaction $transaction): ErrorTransactionData
     {
         $result = new ErrorTransactionData();
 

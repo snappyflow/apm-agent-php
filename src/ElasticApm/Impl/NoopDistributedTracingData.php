@@ -50,8 +50,8 @@ final class NoopDistributedTracingData
     {
         if (self::$data === null) {
             self::$data = new DistributedTracingData();
-            self::$data->traceId = NoopExecutionSegment::TRACE_ID;
-            self::$data->parentId = NoopExecutionSegment::ID;
+            self::$data->traceId = NoopExecutionSegment::$TRACE_ID;
+            self::$data->parentId = NoopExecutionSegment::$ID;
             self::$data->isSampled = false;
         }
 

@@ -70,11 +70,11 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
     protected function __construct(
         ExecutionSegmentData $data,
         Tracer $tracer,
-        ?ExecutionSegment $parentExecutionSegment,
+        ExecutionSegment $parentExecutionSegment = null,
         string $traceId,
         string $name,
         string $type,
-        ?float $timestamp = null
+        float $timestamp = null
     ) {
         $monotonicClockNow = $tracer->getClock()->getMonotonicClockCurrentTime();
         $systemClockNow = $tracer->getClock()->getSystemClockCurrentTime();
@@ -84,7 +84,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
             = TimeUtil::calcDuration($this->data->timestamp, $systemClockNow);
         $this->monotonicBeginTime = $monotonicClockNow;
         $this->data->traceId = $traceId;
-        $this->data->id = IdGenerator::generateId(Constants::EXECUTION_SEGMENT_ID_SIZE_IN_BYTES);
+        $this->data->id = IdGenerator::generateId(Constants::$EXECUTION_SEGMENT_ID_SIZE_IN_BYTES);
         $this->setName($name);
         $this->setType($type);
 
@@ -101,7 +101,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
         }
 
         $this->logger = $tracer->loggerFactory()
-                               ->loggerForClass(LogCategory::PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
+                               ->loggerForClass(LogCategory::$PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
                                ->addContext('this', $this);
     }
 
@@ -126,7 +126,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
     /**
      * @return ExecutionSegment|null
      */
-    abstract public function parentExecutionSegment(): ?ExecutionSegment;
+    abstract public function parentExecutionSegment();
 
     public function getName(): string
     {
@@ -165,9 +165,9 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype,
-        ?string $action,
-        ?float $timestamp,
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null,
         int $numberOfStackFramesToSkip
     ) {
         $newSpan = $this->beginChildSpan(
@@ -194,10 +194,10 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
      *
      * @return string|null
      */
-    abstract public function dispatchCreateError(?ErrorExceptionData $errorExceptionData): ?string;
+    abstract public function dispatchCreateError(ErrorExceptionData $errorExceptionData = null);
 
     /** @inheritDoc */
-    public function createErrorFromThrowable(Throwable $throwable): ?string
+    public function createErrorFromThrowable(Throwable $throwable)
     {
         return $this->dispatchCreateError(
             ErrorExceptionData::buildFromThrowable(
@@ -208,7 +208,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
     }
 
     /** @inheritDoc */
-    public function createCustomError(CustomErrorData $customErrorData): ?string
+    public function createCustomError(CustomErrorData $customErrorData)
     {
         return $this->dispatchCreateError(
             ErrorExceptionData::buildFromCustomData(
@@ -259,7 +259,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
     }
 
     /** @inheritDoc */
-    public function setName(string $name): void
+    public function setName(string $name)
     {
         if ($this->beforeMutating()) {
             return;
@@ -269,7 +269,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
     }
 
     /** @inheritDoc */
-    public function setType(string $type): void
+    public function setType(string $type)
     {
         if ($this->beforeMutating()) {
             return;
@@ -279,7 +279,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
     }
 
     /** @inheritDoc */
-    public function injectDistributedTracingHeaders(Closure $headerInjector): void
+    public function injectDistributedTracingHeaders(Closure $headerInjector)
     {
         /** @noinspection PhpDeprecationInspection */
         $distTracingData = $this->getDistributedTracingData();
@@ -288,16 +288,16 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
         }
     }
 
-    public static function isValidOutcome(?string $outcome): bool
+    public static  function isValidOutcome(string $outcome): bool
     {
         return $outcome === null
-               || $outcome === Constants::OUTCOME_SUCCESS
-               || $outcome === Constants::OUTCOME_FAILURE
-               || $outcome === Constants::OUTCOME_UNKNOWN;
+               || $outcome === Constants::$OUTCOME_SUCCESS
+               || $outcome === Constants::$OUTCOME_FAILURE
+               || $outcome === Constants::$OUTCOME_UNKNOWN;
     }
 
     /** @inheritDoc */
-    public function setOutcome(?string $outcome): void
+    public function setOutcome(string $outcome)
     {
         if (!self::isValidOutcome($outcome)) {
             ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
@@ -309,13 +309,13 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
     }
 
     /** @inheritDoc */
-    public function getOutcome(): ?string
+    public function getOutcome()
     {
         return $this->data->outcome;
     }
 
     /** @inheritDoc */
-    public function discard(): void
+    public function discard()
     {
         if ($this->beforeMutating()) {
             return;
@@ -325,7 +325,7 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
         $this->end();
     }
 
-    protected function endExecutionSegment(?float $duration = null): bool
+    protected function endExecutionSegment(float $duration = null): bool
     {
         if ($this->isDiscarded) {
             $this->isEnded = true;
@@ -365,13 +365,13 @@ abstract class ExecutionSegment implements ExecutionSegmentInterface, LoggableIn
      *
      * @return void
      */
-    abstract protected function updateBreakdownMetricsOnEnd(float $monotonicClockNow): void;
+    abstract protected function updateBreakdownMetricsOnEnd(float $monotonicClockNow);
 
     protected function doUpdateBreakdownMetricsOnEnd(
         float $monotonicClockNow,
         string $spanType,
-        ?string $spanSubtype
-    ): void {
+        string $spanSubtype = null
+    ) {
         /**
          * @var BreakdownMetricsSelfTimeTracker
          *

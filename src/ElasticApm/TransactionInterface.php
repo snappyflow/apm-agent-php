@@ -41,7 +41,7 @@ interface TransactionInterface extends ExecutionSegmentInterface
      *
      * @link https://github.com/elastic/apm-server/blob/7.0/docs/spec/transactions/transaction.json#L19
      */
-    public function getParentId(): ?string;
+    public function getParentId();
 
     /**
      * Begins a new span with the current execution segment
@@ -65,9 +65,9 @@ interface TransactionInterface extends ExecutionSegmentInterface
     public function beginCurrentSpan(
         string $name,
         string $type,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ): SpanInterface;
 
     /**
@@ -98,9 +98,9 @@ interface TransactionInterface extends ExecutionSegmentInterface
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     );
 
     /**
@@ -125,12 +125,12 @@ interface TransactionInterface extends ExecutionSegmentInterface
      *
      * @return void
      */
-    public function setResult(?string $result): void;
+    public function setResult(string $result = null);
 
     /**
      * @see setResult() For the description
      */
-    public function getResult(): ?string;
+    public function getResult();
 
     /**
      * If the transaction does not have a parent ID yet,
@@ -141,3 +141,4 @@ interface TransactionInterface extends ExecutionSegmentInterface
      */
     public function ensureParentId(): string;
 }
+

@@ -41,16 +41,16 @@ use Throwable;
 abstract class NoopExecutionSegment implements ExecutionSegmentInterface, LoggableInterface
 {
     /** @var string */
-    public const ID = '0000000000000000';
+    public static $ID = '0000000000000000';
 
     /** @var string */
-    public const TRACE_ID = '00000000000000000000000000000000';
+    public static $TRACE_ID = '00000000000000000000000000000000';
 
     /** @var string */
-    public const NAME = 'NO-OP';
+    public static $NAME = 'NO-OP';
 
     /** @var string */
-    public const TYPE = 'noop';
+    public static $TYPE = 'noop';
 
     /** @inheritDoc */
     public function getTimestamp(): float
@@ -61,43 +61,43 @@ abstract class NoopExecutionSegment implements ExecutionSegmentInterface, Loggab
     /** @inheritDoc */
     public function getId(): string
     {
-        return self::ID;
+        return self::$ID;
     }
 
     /** @inheritDoc */
-    public function setName(string $name): void
+    public function setName(string $name)
     {
     }
 
     /** @inheritDoc */
     public function getTraceId(): string
     {
-        return self::TRACE_ID;
+        return self::$TRACE_ID;
     }
 
     /** @inheritDoc */
-    public function setType(string $type): void
+    public function setType(string $type)
     {
     }
 
     /** @inheritDoc */
-    public function setOutcome(?string $outcome): void
+    public function setOutcome(string $outcome)
     {
     }
 
     /** @inheritDoc */
-    public function getOutcome(): ?string
+    public function getOutcome(): string
     {
-        return null;
+        return "";
     }
 
     /** @inheritDoc */
     public function beginChildSpan(
         string $name,
         string $type,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ): SpanInterface {
         return NoopSpan::singletonInstance();
     }
@@ -107,26 +107,26 @@ abstract class NoopExecutionSegment implements ExecutionSegmentInterface, Loggab
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ) {
         return $callback(NoopSpan::singletonInstance());
     }
 
     /** @inheritDoc */
-    public function getDistributedTracingData(): ?DistributedTracingData
+    public function getDistributedTracingData()
     {
         return null;
     }
 
     /** @inheritDoc */
-    public function injectDistributedTracingHeaders(Closure $headerInjector): void
+    public function injectDistributedTracingHeaders(Closure $headerInjector)
     {
     }
 
     /** @inheritDoc */
-    public function end(?float $duration = null): void
+    public function end(float $duration = null)
     {
     }
 
@@ -137,19 +137,19 @@ abstract class NoopExecutionSegment implements ExecutionSegmentInterface, Loggab
     }
 
     /** @inheritDoc */
-    public function createErrorFromThrowable(Throwable $throwable): ?string
+    public function createErrorFromThrowable(Throwable $throwable): string
     {
-        return null;
+        return "";
     }
 
     /** @inheritDoc */
-    public function createCustomError(CustomErrorData $customErrorData): ?string
+    public function createCustomError(CustomErrorData $customErrorData): string
     {
-        return null;
+        return "";
     }
 
     /** @inheritDoc */
-    public function discard(): void
+    public function discard()
     {
     }
 }

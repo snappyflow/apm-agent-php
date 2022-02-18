@@ -71,7 +71,7 @@ final class ArrayUtil
             return $fallbackValue;
         }
 
-        return $array[$key];
+        return !is_null($array[$key]) ? $array[$key] : "";
     }
 
     /**

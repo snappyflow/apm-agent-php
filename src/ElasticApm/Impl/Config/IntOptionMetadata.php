@@ -32,7 +32,7 @@ namespace Elastic\Apm\Impl\Config;
  */
 final class IntOptionMetadata extends OptionWithDefaultValueMetadata
 {
-    public function __construct(?int $minValidValue, ?int $maxValidValue, int $defaultValue)
+    public function __construct(int $minValidValue, int $maxValidValue = null, int $defaultValue)
     {
         parent::__construct(new IntOptionParser($minValidValue, $maxValidValue), $defaultValue);
     }

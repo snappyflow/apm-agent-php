@@ -39,9 +39,16 @@ final class Backend
     /** @var SinkInterface */
     private $logSink;
 
-    public function __construct(int $maxEnabledLevel, ?SinkInterface $logSink)
+    public function __construct(int $maxEnabledLevel, SinkInterface $logSink = null)
     {
         $this->maxEnabledLevel = $maxEnabledLevel;
+        if ($logSink != null) {
+            $this->logSink = $logSink;
+        } else {
+            $this->logSink = (ElasticApmExtensionUtil::isLoaded()
+            ? new DefaultSink()
+            : NoopLogSink::singletonInstance());
+        }
         $this->logSink = $logSink ??
                          (ElasticApmExtensionUtil::isLoaded()
                              ? new DefaultSink()
@@ -98,9 +105,9 @@ final class Backend
         int $srcCodeLine,
         string $srcCodeFunc,
         LoggerData $loggerData,
-        ?bool $includeStacktrace,
+        bool $includeStacktrace = null,
         int $numberOfStackFramesToSkip
-    ): void {
+    ) {
         $this->logSink->consume(
             $statementLevel,
             $message,

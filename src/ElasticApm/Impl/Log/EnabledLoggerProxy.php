@@ -45,7 +45,7 @@ final class EnabledLoggerProxy
     private $loggerData;
 
     /** @var bool|null */
-    private $includeStacktrace = null;
+    private $includeStacktrace = false;
 
     public function __construct(int $statementLevel, int $srcCodeLine, string $srcCodeFunc, LoggerData $loggerData)
     {

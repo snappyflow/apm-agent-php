@@ -43,5 +43,5 @@ interface ExecutionSegmentContextInterface
      * @link    https://github.com/elastic/apm-server/blob/7.0/docs/spec/spans/span.json#L88
      * @link    https://github.com/elastic/apm-server/blob/7.0/docs/spec/tags.json
      */
-    public function setLabel(string $key, $value): void;
+    public function setLabel(string $key, $value);
 }

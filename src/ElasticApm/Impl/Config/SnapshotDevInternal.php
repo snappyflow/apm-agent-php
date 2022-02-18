@@ -53,9 +53,9 @@ final class SnapshotDevInternal implements LoggableInterface
     /** @var bool */
     private $gcMemCachesAfterEveryTransaction = false;
 
-    public function __construct(?WildcardListMatcher $devInternal, LoggerFactory $loggerFactory)
+    public function __construct(WildcardListMatcher $devInternal, LoggerFactory $loggerFactory)
     {
-        $logger = $loggerFactory->loggerForClass(LogCategory::CONFIGURATION, __NAMESPACE__, __CLASS__, __FILE__);
+        $logger = $loggerFactory->loggerForClass(LogCategory::$CONFIGURATION, __NAMESPACE__, __CLASS__, __FILE__);
 
         /** @phpstan-ignore-next-line */
         foreach ($this as $propName => $propVal) {
@@ -67,8 +67,8 @@ final class SnapshotDevInternal implements LoggableInterface
 
             ($loggerProxy = $logger->ifInfoLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
-                OptionNames::DEV_INTERNAL . ' sub-option ' . $subOptName . ' is set',
-                [OptionNames::DEV_INTERNAL . ' configuration' => $devInternal]
+                OptionNames::$DEV_INTERNAL . ' sub-option ' . $subOptName . ' is set',
+                [OptionNames::$DEV_INTERNAL . ' configuration' => $devInternal]
             );
 
             $this->$propName = true;

@@ -32,13 +32,13 @@ use Elastic\Apm\Impl\Util\ArrayUtil;
  */
 final class LoggablePhpStacktrace
 {
-    public const STACK_TRACE_KEY = 'stacktrace';
-    public const CLASS_KEY = 'class';
-    public const FUNCTION_KEY = 'function';
-    public const FILE_KEY = 'file';
-    public const LINE_KEY = 'line';
-    public const THIS_OBJECT_KEY = 'this';
-    public const ARGS_KEY = 'args';
+    public static $STACK_TRACE_KEY = 'stacktrace';
+    public static $CLASS_KEY = 'class';
+    public static $FUNCTION_KEY = 'function';
+    public static $FILE_KEY = 'file';
+    public static $LINE_KEY = 'line';
+    public static $THIS_OBJECT_KEY = 'this';
+    public static $ARGS_KEY = 'args';
 
     /**
      * @param int $numberOfStackFramesToSkip
@@ -68,27 +68,27 @@ final class LoggablePhpStacktrace
      *
      * @return array<string, mixed>
      */
-    private static function buildStackFrame(array $stackFrame): array
+    public static   function buildStackFrame(array $stackFrame): array
     {
         $result = [];
         if (!is_null($className = ArrayUtil::getValueIfKeyExistsElse('class', $stackFrame, null))) {
-            $result[self::CLASS_KEY] = $className;
+            $result[self::$CLASS_KEY] = $className;
         }
 
         if (!is_null($funcName = ArrayUtil::getValueIfKeyExistsElse('function', $stackFrame, null))) {
-            $result[self::FUNCTION_KEY] = $funcName;
+            $result[self::$FUNCTION_KEY] = $funcName;
         }
 
         if (!is_null($srcFile = ArrayUtil::getValueIfKeyExistsElse('file', $stackFrame, null))) {
-            $result[self::FILE_KEY] = self::adaptSourceCodeFilePath($srcFile);
+            $result[self::$FILE_KEY] = self::adaptSourceCodeFilePath($srcFile);
         }
 
         if (!is_null($srcLine = ArrayUtil::getValueIfKeyExistsElse('line', $stackFrame, null))) {
-            $result[self::LINE_KEY] = $srcLine;
+            $result[self::$LINE_KEY] = $srcLine;
         }
 
         if (!is_null($callThisObj = ArrayUtil::getValueIfKeyExistsElse('object', $stackFrame, null))) {
-            $result[self::THIS_OBJECT_KEY] = $callThisObj;
+            $result[self::$THIS_OBJECT_KEY] = $callThisObj;
         }
 
         if (!is_null($callArgs = ArrayUtil::getValueIfKeyExistsElse('args', $stackFrame, null))) {
@@ -96,13 +96,13 @@ final class LoggablePhpStacktrace
             foreach ($callArgs as $callArg) {
                 $args[] = $callArg;
             }
-            $result[self::ARGS_KEY] = $args;
+            $result[self::$ARGS_KEY] = $args;
         }
 
         return $result;
     }
 
-    public static function adaptSourceCodeFilePath(string $srcFile): string
+    public static  function adaptSourceCodeFilePath(string $srcFile): string
     {
         return basename($srcFile);
     }

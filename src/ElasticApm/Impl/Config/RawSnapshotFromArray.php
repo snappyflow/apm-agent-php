@@ -43,7 +43,7 @@ final class RawSnapshotFromArray implements RawSnapshotInterface
         $this->optNameToRawValue = $optNameToRawValue;
     }
 
-    public function valueFor(string $optionName): ?string
+    public function valueFor(string $optionName): string
     {
         return ArrayUtil::getValueIfKeyExistsElse($optionName, $this->optNameToRawValue, null);
     }

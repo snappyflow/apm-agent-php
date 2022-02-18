@@ -48,7 +48,7 @@ final class TransactionContextRequest extends ContextDataWrapper implements Tran
     }
 
     /** @inheritDoc */
-    public function setMethod(string $method): void
+    public function setMethod(string $method)
     {
         if ($this->beforeMutating()) {
             return;

@@ -42,7 +42,7 @@ use Elastic\Apm\TransactionInterface;
  */
 final class TransactionForExtensionRequest
 {
-    private const DEFAULT_NAME = 'Unnamed transaction';
+    private  static $DEFAULT_NAME = 'Unnamed transaction';
 
     /** @var Tracer */
     private $tracer;
@@ -50,10 +50,10 @@ final class TransactionForExtensionRequest
     /** @var Logger */
     private $logger;
 
-    /** @var ?string */
+    /** @var string */
     private $httpMethod = null;
 
-    /** @var ?string */
+    /** @var string */
     private $fullUrl = null;
 
     /** @var ?UrlParts */
@@ -66,12 +66,12 @@ final class TransactionForExtensionRequest
     {
         $this->tracer = $tracer;
         $this->logger = $tracer->loggerFactory()
-                               ->loggerForClass(LogCategory::AUTO_INSTRUMENTATION, __NAMESPACE__, __CLASS__, __FILE__);
+                               ->loggerForClass(LogCategory::$AUTO_INSTRUMENTATION, __NAMESPACE__, __CLASS__, __FILE__);
 
         $this->transactionForRequest = $this->beginTransaction($requestInitStartTime);
     }
 
-    private function beginTransaction(float $requestInitStartTime): ?TransactionInterface
+    private function beginTransaction(float $requestInitStartTime)
     {
         if (!self::isCliScript()) {
             if (!$this->discoverHttpRequestData()) {
@@ -79,7 +79,7 @@ final class TransactionForExtensionRequest
             }
         }
         $name = self::isCliScript() ? $this->discoverCliName() : $this->discoverHttpName();
-        $type = self::isCliScript() ? Constants::TRANSACTION_TYPE_CLI : Constants::TRANSACTION_TYPE_REQUEST;
+        $type = self::isCliScript() ? Constants::$TRANSACTION_TYPE_CLI : Constants::$TRANSACTION_TYPE_REQUEST;
         $timestamp = $this->discoverTimestamp($requestInitStartTime);
         $distributedTracingData = $this->discoverIncomingDistributedTracingData();
 
@@ -130,9 +130,9 @@ final class TransactionForExtensionRequest
             }
         }
 
-        /** @var ?string */
+        /** @var string */
         $urlPath = null;
-        /** @var ?string */
+        /** @var string */
         $urlQuery = null;
 
         $pathQuery = self::getMandatoryServerVarElement('REQUEST_URI');
@@ -188,12 +188,12 @@ final class TransactionForExtensionRequest
         if ($matchedIgnoreExpr !== null) {
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
-                'Transaction is ignored because its URL path matched ' . OptionNames::TRANSACTION_IGNORE_URLS
+                'Transaction is ignored because its URL path matched ' . OptionNames::$TRANSACTION_IGNORE_URLS
                 . ' configuration',
                 [
                     'urlPath'                                               => $urlPath,
                     'matched ignore expression'                             => $matchedIgnoreExpr,
-                    OptionNames::TRANSACTION_IGNORE_URLS . ' configuration' => $ignoreMatcher,
+                    OptionNames::$TRANSACTION_IGNORE_URLS . ' configuration' => $ignoreMatcher,
                 ]
             );
             return true;
@@ -202,7 +202,7 @@ final class TransactionForExtensionRequest
         return false;
     }
 
-    private static function buildFullUrl(?string $scheme, ?string $hostPort, ?string $pathQuery): ?string
+    private static function buildFullUrl(string $scheme, string $hostPort, string $pathQuery): string
     {
         if ($hostPort === null) {
             return null;
@@ -223,7 +223,7 @@ final class TransactionForExtensionRequest
         return $fullUrl;
     }
 
-    private function setTxPropsBasedOnHttpRequestData(TransactionInterface $tx): void
+    private function setTxPropsBasedOnHttpRequestData(TransactionInterface $tx)
     {
         if ($this->httpMethod !== null) {
             $tx->context()->request()->setMethod($this->httpMethod);
@@ -253,7 +253,7 @@ final class TransactionForExtensionRequest
         }
     }
 
-    private function beforeHttpEnd(TransactionInterface $tx): void
+    private function beforeHttpEnd(TransactionInterface $tx)
     {
         if ($tx->getResult() === null) {
             $this->discoverHttpResult($tx);
@@ -264,7 +264,7 @@ final class TransactionForExtensionRequest
         }
     }
 
-    private function logGcStatus(): void
+    private function logGcStatus()
     {
         if (!function_exists('gc_status')) {
             return;
@@ -277,7 +277,7 @@ final class TransactionForExtensionRequest
         && $loggerProxy->log('Called gc_status()', ['gc_status() return value' => $gcStatusRetVal]);
     }
 
-    public function onShutdown(): void
+    public function onShutdown()
     {
         $tx = $this->transactionForRequest;
         if ($tx === null || $tx->isNoop() || $tx->hasEnded()) {
@@ -296,8 +296,8 @@ final class TransactionForExtensionRequest
             $numberOfCollectedCycles = gc_collect_cycles();
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
-                'Called gc_collect_cycles() because ' . OptionNames::DEV_INTERNAL
-                . ' sub-option ' . DevInternalSubOptionNames::GC_COLLECT_CYCLES_AFTER_EVERY_TRANSACTION . ' is set',
+                'Called gc_collect_cycles() because ' . OptionNames::$DEV_INTERNAL
+                . ' sub-option ' . DevInternalSubOptionNames::$GC_COLLECT_CYCLES_AFTER_EVERY_TRANSACTION . ' is set',
                 ['numberOfCollectedCycles' => $numberOfCollectedCycles]
             );
 
@@ -308,8 +308,8 @@ final class TransactionForExtensionRequest
             $numberOfBytesFreed = gc_mem_caches();
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
-                'Called gc_mem_caches() because ' . OptionNames::DEV_INTERNAL
-                . ' sub-option ' . DevInternalSubOptionNames::GC_MEM_CACHES_AFTER_EVERY_TRANSACTION . ' is set',
+                'Called gc_mem_caches() because ' . OptionNames::$DEV_INTERNAL
+                . ' sub-option ' . DevInternalSubOptionNames::$GC_MEM_CACHES_AFTER_EVERY_TRANSACTION . ' is set',
                 ['numberOfBytesFreed' => $numberOfBytesFreed]
             );
         }
@@ -336,9 +336,9 @@ final class TransactionForExtensionRequest
         ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
         && $loggerProxy->log(
             'Could not discover CLI script name - using default transaction name',
-            ['DEFAULT_NAME' => self::DEFAULT_NAME]
+            ['DEFAULT_NAME' => self::$DEFAULT_NAME]
         );
-        return self::DEFAULT_NAME;
+        return self::$DEFAULT_NAME;
     }
 
     /**
@@ -375,9 +375,9 @@ final class TransactionForExtensionRequest
             ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
                 'Failed to  discover path part of URL to derive transaction name - using default transaction name',
-                ['DEFAULT_NAME' => self::DEFAULT_NAME]
+                ['DEFAULT_NAME' => self::$DEFAULT_NAME]
             );
-            return self::DEFAULT_NAME;
+            return self::$DEFAULT_NAME;
         }
 
         $urlGroupsMatcher = $this->tracer->getConfig()->urlGroups();
@@ -391,7 +391,7 @@ final class TransactionForExtensionRequest
                 [
                     'urlPath'                                  => $urlPath,
                     'matched URL group'                        => $urlPathGroup,
-                    OptionNames::URL_GROUPS . ' configuration' => $urlGroupsMatcher,
+                    OptionNames::$URL_GROUPS . ' configuration' => $urlGroupsMatcher,
                 ]
             );
         }
@@ -434,9 +434,9 @@ final class TransactionForExtensionRequest
         return $serverRequestTimeInMicroseconds;
     }
 
-    private function discoverIncomingDistributedTracingData(): ?string
+    private function discoverIncomingDistributedTracingData()
     {
-        $headerName = HttpDistributedTracing::TRACE_PARENT_HEADER_NAME;
+        $headerName = HttpDistributedTracing::$TRACE_PARENT_HEADER_NAME;
         $traceParentHeaderKey = 'HTTP_' . strtoupper($headerName);
 
         $traceParentHeaderValue = self::getOptionalServerVarElement($traceParentHeaderKey);
@@ -448,14 +448,14 @@ final class TransactionForExtensionRequest
 
         ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
         && $loggerProxy->log(
-            'Incoming ' . HttpDistributedTracing::TRACE_PARENT_HEADER_NAME . ' HTTP request header found',
+            'Incoming ' . HttpDistributedTracing::$TRACE_PARENT_HEADER_NAME . ' HTTP request header found',
             ['traceParentHeaderValue' => $traceParentHeaderValue]
         );
 
         return $traceParentHeaderValue;
     }
 
-    private function discoverHttpStatusCode(): ?int
+    private function discoverHttpStatusCode(): int
     {
         $statusCode = http_response_code();
         if (!is_int($statusCode)) {
@@ -470,7 +470,7 @@ final class TransactionForExtensionRequest
         return $statusCode;
     }
 
-    private function discoverHttpResult(TransactionInterface $tx): void
+    private function discoverHttpResult(TransactionInterface $tx)
     {
         $httpStatusCode = $this->discoverHttpStatusCode();
         if ($httpStatusCode === null) {
@@ -488,7 +488,7 @@ final class TransactionForExtensionRequest
         );
     }
 
-    private function discoverHttpOutcome(TransactionInterface $tx): void
+    private function discoverHttpOutcome(TransactionInterface $tx)
     {
         $httpStatusCode = $this->discoverHttpStatusCode();
         if ($httpStatusCode === null) {
@@ -496,8 +496,8 @@ final class TransactionForExtensionRequest
         }
 
         $outcome = (500 <= $httpStatusCode && $httpStatusCode < 600)
-            ? Constants::OUTCOME_FAILURE
-            : Constants::OUTCOME_SUCCESS;
+            ? Constants::$OUTCOME_FAILURE
+            : Constants::$OUTCOME_SUCCESS;
         $tx->setOutcome($outcome);
 
         ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))

@@ -61,9 +61,9 @@ final class Span extends ExecutionSegment implements SpanInterface
         ExecutionSegment $parentExecutionSegment,
         string $name,
         string $type,
-        ?string $subtype,
-        ?string $action,
-        ?float $timestamp,
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null,
         bool $isDropped
     ) {
         $this->data = new SpanData();
@@ -88,7 +88,7 @@ final class Span extends ExecutionSegment implements SpanInterface
         $this->data->parentId = $this->parentExecutionSegment->getId();
 
         $this->logger = $this->containingTransaction()->tracer()->loggerFactory()
-                             ->loggerForClass(LogCategory::PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
+                             ->loggerForClass(LogCategory::$PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
                              ->addContext('this', $this);
 
         $this->isDropped = $isDropped;
@@ -115,7 +115,7 @@ final class Span extends ExecutionSegment implements SpanInterface
     }
 
     /** @inheritDoc */
-    public function parentExecutionSegment(): ?ExecutionSegment
+    public function parentExecutionSegment()
     {
         return $this->parentExecutionSegment;
     }
@@ -153,7 +153,7 @@ final class Span extends ExecutionSegment implements SpanInterface
     }
 
     /** @inheritDoc */
-    public function setAction(?string $action): void
+    public function setAction(string $action = null)
     {
         if ($this->beforeMutating()) {
             return;
@@ -163,7 +163,7 @@ final class Span extends ExecutionSegment implements SpanInterface
     }
 
     /** @inheritDoc */
-    public function setSubtype(?string $subtype): void
+    public function setSubtype(string $subtype = null)
     {
         if ($this->beforeMutating()) {
             return;
@@ -173,7 +173,7 @@ final class Span extends ExecutionSegment implements SpanInterface
     }
 
     /** @inheritDoc */
-    public function getDistributedTracingData(): ?DistributedTracingData
+    public function getDistributedTracingData()
     {
         $spanAsParent = $this->shouldBeSentToApmServer() ? $this : null;
         return $this->containingTransaction->doGetDistributedTracingData($spanAsParent);
@@ -183,9 +183,9 @@ final class Span extends ExecutionSegment implements SpanInterface
     public function beginChildSpan(
         string $name,
         string $type,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ): SpanInterface {
         return
             $this->containingTransaction->beginSpan(
@@ -204,9 +204,9 @@ final class Span extends ExecutionSegment implements SpanInterface
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ) {
         /** @noinspection PhpUnhandledExceptionInspection */
         return $this->captureChildSpanImpl(
@@ -221,7 +221,7 @@ final class Span extends ExecutionSegment implements SpanInterface
     }
 
     /** @inheritDoc */
-    public function dispatchCreateError(?ErrorExceptionData $errorExceptionData): ?string
+    public function dispatchCreateError(ErrorExceptionData $errorExceptionData = null)
     {
         $spanForError = $this->shouldBeSentToApmServer() ? $this : null;
         return $this->containingTransaction->tracer()->doCreateError(
@@ -232,7 +232,7 @@ final class Span extends ExecutionSegment implements SpanInterface
     }
 
     /** @inheritDoc */
-    public function endSpanEx(int $numberOfStackFramesToSkip, ?float $duration = null): void
+    public function endSpanEx(int $numberOfStackFramesToSkip, float $duration = null)
     {
         if (!$this->endExecutionSegment($duration)) {
             return;
@@ -256,7 +256,7 @@ final class Span extends ExecutionSegment implements SpanInterface
         }
     }
 
-    public function parentIfSpan(): ?Span
+    public function parentIfSpan()
     {
         /**
          * parentExecutionSegment is either a parent span or a containing transaction ($this)
@@ -270,14 +270,14 @@ final class Span extends ExecutionSegment implements SpanInterface
     }
 
     /** @inheritDoc */
-    public function end(?float $duration = null): void
+    public function end(float $duration = null)
     {
         // Since endSpanEx was not called directly it should not be kept in the stack trace
         $this->endSpanEx(/* numberOfStackFramesToSkip: */ 1, $duration);
     }
 
     /** @inheritDoc */
-    protected function updateBreakdownMetricsOnEnd(float $monotonicClockNow): void
+    protected function updateBreakdownMetricsOnEnd(float $monotonicClockNow)
     {
         $this->doUpdateBreakdownMetricsOnEnd($monotonicClockNow, $this->data->type, $this->data->subtype);
     }

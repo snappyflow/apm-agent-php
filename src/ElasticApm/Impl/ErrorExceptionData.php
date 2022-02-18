@@ -90,7 +90,7 @@ class ErrorExceptionData implements SerializableDataInterface, LoggableInterface
      */
     public $type = null;
 
-    public static function buildFromCustomData(Tracer $tracer, CustomErrorData $customErrorData): ErrorExceptionData
+    public static  function buildFromCustomData(Tracer $tracer, CustomErrorData $customErrorData): ErrorExceptionData
     {
         $result = new ErrorExceptionData();
 
@@ -105,7 +105,7 @@ class ErrorExceptionData implements SerializableDataInterface, LoggableInterface
         return $result;
     }
 
-    public static function buildFromThrowable(Tracer $tracer, Throwable $throwable): ErrorExceptionData
+    public static  function buildFromThrowable(Tracer $tracer, Throwable $throwable): ErrorExceptionData
     {
         $customErrorData = new CustomErrorData();
 

@@ -31,7 +31,7 @@ use ElasticApmTests\Util\TracerBuilderForTests;
 
 class ExampleUsingPublicApi extends TracerUnitTestCaseBase
 {
-    public function main(): void
+    public function main()
     {
         // Arrange
         $mockEventSink = new MockEventSink();

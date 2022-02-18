@@ -33,19 +33,19 @@ final class Assert
     use StaticClassTrait;
 
     /** @var int */
-    private static $maxEnabledLevel = AssertLevel::O_1;
+    private static $maxEnabledLevel = 1;
 
-    public static function configure(int $maxEnabledLevel): void
+    public static function configure(int $maxEnabledLevel)
     {
         self::$maxEnabledLevel = $maxEnabledLevel;
     }
 
-    public static function ifEnabled(): ?EnabledAssertProxy
+    public static function ifEnabled(): EnabledAssertProxy
     {
-        return self::ifEnabledLevel(AssertLevel::O_1);
+        return self::ifEnabledLevel(AssertLevel::$O_1);
     }
 
-    private static function ifEnabledLevel(int $statementLevel): ?EnabledAssertProxy
+    private static function ifEnabledLevel(int $statementLevel): EnabledAssertProxy
     {
         return (self::$maxEnabledLevel >= $statementLevel) ? new EnabledAssertProxy() : null;
     }

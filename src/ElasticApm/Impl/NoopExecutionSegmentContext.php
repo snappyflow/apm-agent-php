@@ -34,7 +34,7 @@ use Elastic\Apm\Impl\Log\LoggableInterface;
 abstract class NoopExecutionSegmentContext implements ExecutionSegmentContextInterface, LoggableInterface
 {
     /** @inheritDoc */
-    public function setLabel(string $key, $value): void
+    public function setLabel(string $key, $value)
     {
     }
 }

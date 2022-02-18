@@ -50,5 +50,5 @@ interface AutoInstrumentationInterface
     /**
      * @param RegistrationContextInterface $ctx
      */
-    public function register(RegistrationContextInterface $ctx): void;
+    public function register(RegistrationContextInterface $ctx);
 }

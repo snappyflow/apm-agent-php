@@ -55,7 +55,7 @@ abstract class NumericOptionParser extends OptionParser
      * @phpstan-param T|null $minValidValue
      * @phpstan-param T|null $maxValidValue
      */
-    public function __construct($minValidValue, $maxValidValue)
+    public function __construct($minValidValue, $maxValidValue = null)
     {
         $this->minValidValue = $minValidValue;
         $this->maxValidValue = $maxValidValue;

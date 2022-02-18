@@ -36,14 +36,15 @@ interface EventSinkInterface
      * @param Metadata                        $metadata
      * @param SpanData[]                      $spansData
      * @param ErrorData[]                     $errorsData
-     * @param ?BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction
+     * @param BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction
      * @param TransactionData|null            $transactionData
      */
     public function consume(
         Metadata $metadata,
         array $spansData,
         array $errorsData,
-        ?BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
-        ?TransactionData $transactionData
-    ): void;
+        BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
+        TransactionData $transactionData
+    );
 }
+

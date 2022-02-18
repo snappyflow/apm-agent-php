@@ -44,7 +44,7 @@ final class SpanContextHttp extends ContextDataWrapper implements SpanContextHtt
     }
 
     /** @inheritDoc */
-    public function setUrl(?string $url): void
+    public function setUrl(string $url)
     {
         if ($this->beforeMutating()) {
             return;
@@ -54,7 +54,7 @@ final class SpanContextHttp extends ContextDataWrapper implements SpanContextHtt
     }
 
     /** @inheritDoc */
-    public function setStatusCode(?int $statusCode): void
+    public function setStatusCode(int $statusCode)
     {
         if ($this->beforeMutating()) {
             return;
@@ -64,7 +64,7 @@ final class SpanContextHttp extends ContextDataWrapper implements SpanContextHtt
     }
 
     /** @inheritDoc */
-    public function setMethod(?string $method): void
+    public function setMethod(string $method)
     {
         if ($this->beforeMutating()) {
             return;

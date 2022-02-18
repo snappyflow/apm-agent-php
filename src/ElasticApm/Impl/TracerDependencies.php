@@ -46,9 +46,9 @@ final class TracerDependencies implements LoggableInterface
     /** @var ?Log\SinkInterface */
     public $logSink = null;
 
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
-        $getDependencyType = function (?object $dep): ?string {
+        $getDependencyType = function ($dep): string {
             return is_null($dep) ? null : get_class($dep);
         };
 

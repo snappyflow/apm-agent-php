@@ -50,12 +50,12 @@ abstract class ExecutionSegmentContext extends ContextDataWrapper implements Exe
         parent::__construct($owner);
         $this->data = $data;
         $this->logger = $this->tracer()->loggerFactory()
-                             ->loggerForClass(LogCategory::PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
+                             ->loggerForClass(LogCategory::$PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
                              ->addContext('this', $this);
     }
 
     /** @inheritDoc */
-    public function setLabel(string $key, $value): void
+    public function setLabel(string $key, $value)
     {
         if ($this->beforeMutating()) {
             return;
@@ -80,7 +80,7 @@ abstract class ExecutionSegmentContext extends ContextDataWrapper implements Exe
      *
      * @return bool
      */
-    public static function doesValueHaveSupportedLabelType($value): bool
+    public static  function doesValueHaveSupportedLabelType($value): bool
     {
         return is_null($value) || is_string($value) || is_bool($value) || is_int($value) || is_float($value);
     }

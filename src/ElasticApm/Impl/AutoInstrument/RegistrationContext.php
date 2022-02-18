@@ -43,7 +43,7 @@ final class RegistrationContext implements RegistrationContextInterface
         string $className,
         string $methodName,
         callable $preHook
-    ): void {
+    ) {
         /**
          * elastic_apm_* functions are provided by the elastic_apm extension
          *
@@ -64,7 +64,7 @@ final class RegistrationContext implements RegistrationContextInterface
     public function interceptCallsToFunction(
         string $functionName,
         callable $preHook
-    ): void {
+    ) {
         /**
          * elastic_apm_* functions are provided by the elastic_apm extension
          *
@@ -78,9 +78,9 @@ final class RegistrationContext implements RegistrationContextInterface
                 $this->dbgCurrentPluginDesc,
                 $functionName /* <- dbgInterceptedCallDesc */,
                 function (
-                    /** @noinspection PhpUnusedParameterInspection */ ?object $interceptedCallThis,
+                    /** @noinspection PhpUnusedParameterInspection */ object $interceptedCallThis,
                     array $interceptedCallArgs
-                ) use ($preHook): ?callable {
+                ) use ($preHook): callable {
                     return $preHook($interceptedCallArgs);
                 }
             );

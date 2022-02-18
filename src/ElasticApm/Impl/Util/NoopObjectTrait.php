@@ -40,8 +40,8 @@ trait NoopObjectTrait
         return true;
     }
 
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
-        $stream->toLogAs([LogConsts::TYPE_KEY => ClassNameUtil::fqToShort(get_class($this))]);
+        $stream->toLogAs([LogConsts::$TYPE_KEY => ClassNameUtil::fqToShort(get_class($this))]);
     }
 }

@@ -37,33 +37,33 @@ final class DataSourceNameParser
     use StaticClassTrait;
 
     /** @var array<string, string> */
-    private static $cachedDsnPrefixToSubtype;
+    public static   $cachedDsnPrefixToSubtype;
 
     /**
      * @return array<string, string>
      */
-    private static function getDsnPrefixToSubtype(): array
+    public static   function getDsnPrefixToSubtype(): array
     {
         if (!isset(self::$cachedDsnPrefixToSubtype)) {
             self::$cachedDsnPrefixToSubtype = [
-                'sqlite:'   => Constants::SPAN_TYPE_DB_SUBTYPE_SQLITE,
-                'mysql:'    => Constants::SPAN_TYPE_DB_SUBTYPE_MYSQL,
-                'pgsql:'    => Constants::SPAN_TYPE_DB_SUBTYPE_POSTGRESQL,
-                'oci:'      => Constants::SPAN_TYPE_DB_SUBTYPE_ORACLE,
-                'sqlsrv:'   => Constants::SPAN_TYPE_DB_SUBTYPE_MSSQL,
-                'dblib:'    => Constants::SPAN_TYPE_DB_SUBTYPE_MSSQL,
-                'ibm:'      => Constants::SPAN_TYPE_DB_SUBTYPE_IBM_DB2,
-                'odbc:'     => Constants::SPAN_TYPE_DB_SUBTYPE_ODBC,
-                'cubrid:'   => Constants::SPAN_TYPE_DB_SUBTYPE_CUBRID,
-                'firebird:' => Constants::SPAN_TYPE_DB_SUBTYPE_FIREBIRD,
-                'informix:' => Constants::SPAN_TYPE_DB_SUBTYPE_INFORMIX,
+                'sqlite:'   => Constants::$SPAN_TYPE_DB_SUBTYPE_SQLITE,
+                'mysql:'    => Constants::$SPAN_TYPE_DB_SUBTYPE_MYSQL,
+                'pgsql:'    => Constants::$SPAN_TYPE_DB_SUBTYPE_POSTGRESQL,
+                'oci:'      => Constants::$SPAN_TYPE_DB_SUBTYPE_ORACLE,
+                'sqlsrv:'   => Constants::$SPAN_TYPE_DB_SUBTYPE_MSSQL,
+                'dblib:'    => Constants::$SPAN_TYPE_DB_SUBTYPE_MSSQL,
+                'ibm:'      => Constants::$SPAN_TYPE_DB_SUBTYPE_IBM_DB2,
+                'odbc:'     => Constants::$SPAN_TYPE_DB_SUBTYPE_ODBC,
+                'cubrid:'   => Constants::$SPAN_TYPE_DB_SUBTYPE_CUBRID,
+                'firebird:' => Constants::$SPAN_TYPE_DB_SUBTYPE_FIREBIRD,
+                'informix:' => Constants::$SPAN_TYPE_DB_SUBTYPE_INFORMIX,
             ];
         }
 
         return self::$cachedDsnPrefixToSubtype;
     }
 
-    public static function parse(string $dsn, string &$dbSpanSubtype): void
+    public static  function parse(string $dsn, string &$dbSpanSubtype)
     {
         foreach (self::getDsnPrefixToSubtype() as $dsnPrefix => $subtype) {
             if (TextUtil::isPrefixOf($dsnPrefix, $dsn, /* isCaseSensitive: */ false)) {
@@ -72,6 +72,6 @@ final class DataSourceNameParser
             }
         }
 
-        $dbSpanSubtype = Constants::SPAN_TYPE_DB_SUBTYPE_UNKNOWN;
+        $dbSpanSubtype = Constants::$SPAN_TYPE_DB_SUBTYPE_UNKNOWN;
     }
 }

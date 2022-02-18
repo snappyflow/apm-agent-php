@@ -32,7 +32,7 @@ namespace Elastic\Apm\Impl\Config;
  */
 final class FloatOptionMetadata extends OptionWithDefaultValueMetadata
 {
-    public function __construct(?float $minValidValue, ?float $maxValidValue, float $defaultValue)
+    public function __construct(float $minValidValue, float $maxValidValue, float $defaultValue)
     {
         parent::__construct(new FloatOptionParser($minValidValue, $maxValidValue), $defaultValue);
     }

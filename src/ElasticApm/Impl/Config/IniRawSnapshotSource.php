@@ -32,7 +32,7 @@ use Elastic\Apm\Impl\Util\ArrayUtil;
  */
 final class IniRawSnapshotSource implements RawSnapshotSourceInterface
 {
-    public const DEFAULT_PREFIX = 'elastic_apm.';
+    public static $DEFAULT_PREFIX = 'elastic_apm.';
 
     /** @var string */
     private $iniNamesPrefix;

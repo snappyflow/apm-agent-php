@@ -34,7 +34,7 @@ final class PropertyLogPriority
 {
     use StaticClassTrait;
 
-    public const MUST_BE_INCLUDED = 0;
-    public const NORMAL = self::MUST_BE_INCLUDED + 1;
-    public const LOW = self::NORMAL + 1;
+    public static $MUST_BE_INCLUDED = 0;
+    public static $NORMAL = 1;
+    public static $LOW = 2;
 }

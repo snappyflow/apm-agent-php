@@ -39,9 +39,9 @@ final class WildcardListOptionParser extends OptionParser
         /**
          * @return iterable<string>
          */
-        $splitWildcardExpr = function () use ($rawValue): iterable {
+        $splitWildcardExpr = function () use ($rawValue) {
             foreach (explode(',', $rawValue) as $listElementRaw) {
-                yield trim($listElementRaw);
+                return trim($listElementRaw);
             }
         };
 

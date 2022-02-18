@@ -84,7 +84,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
 
         $distributedTracingData = self::extractDistributedTracingData($builder);
         if ($distributedTracingData == null) {
-            $traceId = IdGenerator::generateId(Constants::TRACE_ID_SIZE_IN_BYTES);
+            $traceId = IdGenerator::generateId(Constants::$TRACE_ID_SIZE_IN_BYTES);
         } else {
             $traceId = $distributedTracingData->traceId;
             $this->data->parentId = $distributedTracingData->parentId;
@@ -103,7 +103,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         $this->config = $builder->tracer->getConfig();
 
         $this->logger = $this->tracer->loggerFactory()
-                                     ->loggerForClass(LogCategory::PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
+                                     ->loggerForClass(LogCategory::$PUBLIC_API, __NAMESPACE__, __CLASS__, __FILE__)
                                      ->addContext('this', $this);
 
         $this->data->isSampled = is_null($distributedTracingData)
@@ -114,13 +114,13 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         && $loggerProxy->log('Transaction created');
     }
 
-    public static function extractDistributedTracingData(TransactionBuilder $builder): ?DistributedTracingData
+    public static  function extractDistributedTracingData(TransactionBuilder $builder)
     {
         $traceParentHeaderValue = null;
         if ($builder->serializedDistTracingData === null) {
             if ($builder->headersExtractor !== null) {
                 $traceParentHeaderValues
-                    = ($builder->headersExtractor)(HttpDistributedTracing::TRACE_PARENT_HEADER_NAME);
+                    = ($builder->headersExtractor)(HttpDistributedTracing::$TRACE_PARENT_HEADER_NAME);
                 if (is_string($traceParentHeaderValues)) {
                     $traceParentHeaderValue = $traceParentHeaderValues;
                 } elseif (is_array($traceParentHeaderValues) && count($traceParentHeaderValues) === 1) {
@@ -139,7 +139,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function getParentId(): ?string
+    public function getParentId()
     {
         return $this->data->parentId;
     }
@@ -174,7 +174,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function parentExecutionSegment(): ?ExecutionSegment
+    public function parentExecutionSegment()
     {
         return null;
     }
@@ -194,7 +194,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         return $this->context;
     }
 
-    public function cloneContextData(): ?TransactionContextData
+    public function cloneContextData()
     {
         if (is_null($this->data->context)) {
             return null;
@@ -203,7 +203,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function setResult(?string $result): void
+    public function setResult(string $result = null)
     {
         if ($this->beforeMutating()) {
             return;
@@ -213,7 +213,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function getResult(): ?string
+    public function getResult()
     {
         return $this->data->result;
     }
@@ -229,7 +229,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         return $this->currentSpan ?? $this;
     }
 
-    public function setCurrentSpan(?Span $newCurrentSpan): void
+    public function setCurrentSpan(Span $newCurrentSpan = null)
     {
         $this->currentSpan = $newCurrentSpan;
     }
@@ -238,14 +238,13 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         ExecutionSegment $parentExecutionSegment,
         string $name,
         string $type,
-        ?string $subtype,
-        ?string $action,
-        ?float $timestamp
-    ): ?Span {
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
+    ) {
         if ($this->beforeMutating() || !$this->tracer->isRecording()) {
             return null;
         }
-
         $isDropped = false;
         // Started and dropped spans should be counted only for sampled transactions
         if ($this->data->isSampled) {
@@ -255,10 +254,10 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
                 if ($this->data->droppedSpansCount === 1) {
                     ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
                     && $loggerProxy->log(
-                        'Starting to drop spans because of ' . OptionNames::TRANSACTION_MAX_SPANS . ' config',
+                        'Starting to drop spans because of ' . OptionNames::$TRANSACTION_MAX_SPANS . ' config',
                         [
                             'count($this->spansDataToSend)'                => count($this->spansDataToSend),
-                            OptionNames::TRANSACTION_MAX_SPANS . ' config' => $this->config->transactionMaxSpans(),
+                            OptionNames::$TRANSACTION_MAX_SPANS . ' config' => $this->config->transactionMaxSpans(),
                         ]
                     );
                 }
@@ -284,9 +283,9 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     public function beginChildSpan(
         string $name,
         string $type,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ): SpanInterface {
         return
             $this->beginSpan(
@@ -305,9 +304,9 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ) {
         /** @noinspection PhpUnhandledExceptionInspection */
         return $this->captureChildSpanImpl(
@@ -325,9 +324,9 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     public function beginCurrentSpan(
         string $name,
         string $type,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ): SpanInterface {
         $this->currentSpan = $this->beginSpan(
             $this->currentSpan ?? $this /* <- parentExecutionSegment */,
@@ -336,7 +335,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
             $subtype,
             $action,
             $timestamp
-        );
+	);
 
         return $this->getCurrentSpan();
     }
@@ -346,9 +345,9 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         string $name,
         string $type,
         Closure $callback,
-        ?string $subtype = null,
-        ?string $action = null,
-        ?float $timestamp = null
+        string $subtype = null,
+        string $action = null,
+        float $timestamp = null
     ) {
         $newSpan = $this->beginCurrentSpan($name, $type, $subtype, $action, $timestamp);
         try {
@@ -366,7 +365,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     public function ensureParentId(): string
     {
         if ($this->data->parentId === null) {
-            $this->data->parentId = IdGenerator::generateId(Constants::EXECUTION_SEGMENT_ID_SIZE_IN_BYTES);
+            $this->data->parentId = IdGenerator::generateId(Constants::$EXECUTION_SEGMENT_ID_SIZE_IN_BYTES);
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
                 'Setting parent ID for already existing transaction',
@@ -378,7 +377,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function dispatchCreateError(?ErrorExceptionData $errorExceptionData): ?string
+    public function dispatchCreateError(ErrorExceptionData $errorExceptionData = null)
     {
         if (is_null($this->currentSpan)) {
             return $this->tracer->doCreateError($errorExceptionData, /* transaction: */ $this, /* span */ null);
@@ -388,7 +387,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function getDistributedTracingData(): ?DistributedTracingData
+    public function getDistributedTracingData()
     {
         if (is_null($this->currentSpan)) {
             return $this->doGetDistributedTracingData(/* span */ null);
@@ -398,7 +397,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         return $this->currentSpan->getDistributedTracingData();
     }
 
-    public function doGetDistributedTracingData(?Span $span): ?DistributedTracingData
+    public function doGetDistributedTracingData(Span $span = null)
     {
         if (!$this->tracer->isRecording()) {
             return null;
@@ -411,13 +410,13 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         return $result;
     }
 
-    public function queueSpanDataToSend(SpanData $spanData): void
+    public function queueSpanDataToSend(SpanData $spanData)
     {
         if ($this->tracer->getConfig()->devInternal()->dropEventAfterEnd()) {
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
                 'Dropping span because '
-                . OptionNames::DEV_INTERNAL . ' sub-option ' . DevInternalSubOptionNames::DROP_EVENT_AFTER_END
+                . OptionNames::$DEV_INTERNAL . ' sub-option ' . DevInternalSubOptionNames::$DROP_EVENT_AFTER_END
                 . ' is set'
             );
             return;
@@ -444,22 +443,22 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
 
         ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
         && $loggerProxy->log(
-            'Starting to drop errors because of ' . OptionNames::TRANSACTION_MAX_SPANS . ' config',
+            'Starting to drop errors because of ' . OptionNames::$TRANSACTION_MAX_SPANS . ' config',
             [
                 'count($this->errorsDataToSend)'               => count($this->errorsDataToSend),
-                OptionNames::TRANSACTION_MAX_SPANS . ' config' => $this->config->transactionMaxSpans(),
+                OptionNames::$TRANSACTION_MAX_SPANS . ' config' => $this->config->transactionMaxSpans(),
             ]
         );
         return false;
     }
 
-    public function queueErrorDataToSend(ErrorData $errorData): void
+    public function queueErrorDataToSend(ErrorData $errorData)
     {
         $this->errorsDataToSend[] = $errorData;
     }
 
     /** @inheritDoc */
-    public function discard(): void
+    public function discard()
     {
         while ($this->currentSpan !== null) {
             $spanToDiscard = $this->currentSpan;
@@ -473,7 +472,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function end(?float $duration = null): void
+    public function end(float $duration = null)
     {
         if (!$this->endExecutionSegment($duration)) {
             return;
@@ -489,7 +488,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
                 'Dropping transaction because '
-                . OptionNames::DEV_INTERNAL . ' sub-option ' . DevInternalSubOptionNames::DROP_EVENT_AFTER_END
+                . OptionNames::$DEV_INTERNAL . ' sub-option ' . DevInternalSubOptionNames::$DROP_EVENT_AFTER_END
                 . ' is set'
             );
         } else {
@@ -511,7 +510,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
         return $this->breakdownMetricsPerTransaction->isSelfTimeEnabled();
     }
 
-    public function addSpanSelfTime(string $spanType, ?string $spanSubtype, float $spanSelfTimeInMicroseconds): void
+    public function addSpanSelfTime(string $spanType, string $spanSubtype = null, float $spanSelfTimeInMicroseconds)
     {
         if ($this->beforeMutating() || !$this->tracer->isRecording()) {
             return;
@@ -525,11 +524,11 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    protected function updateBreakdownMetricsOnEnd(float $monotonicClockNow): void
+    protected function updateBreakdownMetricsOnEnd(float $monotonicClockNow)
     {
         $this->doUpdateBreakdownMetricsOnEnd(
             $monotonicClockNow,
-            BreakdownMetricsPerTransaction::TRANSACTION_SPAN_TYPE,
+            BreakdownMetricsPerTransaction::$TRANSACTION_SPAN_TYPE,
             /* subtype: */ null
         );
     }
@@ -546,7 +545,7 @@ final class Transaction extends ExecutionSegment implements TransactionInterface
     }
 
     /** @inheritDoc */
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
         $currentSpanId = is_null($this->currentSpan) ? null : $this->currentSpan->getId();
         parent::toLogLoggableTraitImpl(

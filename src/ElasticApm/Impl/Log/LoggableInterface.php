@@ -35,5 +35,5 @@ interface LoggableInterface
      *
      * @param LogStreamInterface $stream
      */
-    public function toLog(LogStreamInterface $stream): void;
+    public function toLog(LogStreamInterface $stream);
 }

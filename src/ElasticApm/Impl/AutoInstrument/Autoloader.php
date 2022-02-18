@@ -32,7 +32,7 @@ use Elastic\Apm\Impl\SrcRootDir;
  */
 final class Autoloader
 {
-    private const AUTOLOAD_FQ_CLASS_NAME_PREFIX = 'Elastic\\Apm\\';
+    private static $AUTOLOAD_FQ_CLASS_NAME_PREFIX = 'Elastic\\Apm\\';
 
     /** @var int */
     private static $autoloadFqClassNamePrefixLength;
@@ -40,10 +40,10 @@ final class Autoloader
     /** @var string */
     private static $elasticApmSrcDir;
 
-    public static function register(): void
+    public static function register()
     {
         self::$elasticApmSrcDir = SrcRootDir::$fullPath . DIRECTORY_SEPARATOR . 'ElasticApm';
-        self::$autoloadFqClassNamePrefixLength = strlen(self::AUTOLOAD_FQ_CLASS_NAME_PREFIX);
+        self::$autoloadFqClassNamePrefixLength = strlen(self::$AUTOLOAD_FQ_CLASS_NAME_PREFIX);
 
         spl_autoload_register([__CLASS__, 'autoloadCodeForClass'], /* throw: */ true);
     }
@@ -51,10 +51,10 @@ final class Autoloader
     private static function shouldAutoloadCodeForClass(string $fqClassName): bool
     {
         // does the class use the namespace prefix?
-        return strncmp(self::AUTOLOAD_FQ_CLASS_NAME_PREFIX, $fqClassName, self::$autoloadFqClassNamePrefixLength) === 0;
+        return strncmp(self::$AUTOLOAD_FQ_CLASS_NAME_PREFIX, $fqClassName, self::$autoloadFqClassNamePrefixLength) === 0;
     }
 
-    public static function autoloadCodeForClass(string $fqClassName): void
+    public static function autoloadCodeForClass(string $fqClassName)
     {
         // Example of $fqClassName: Elastic\Apm\Impl\Util\Assert
 

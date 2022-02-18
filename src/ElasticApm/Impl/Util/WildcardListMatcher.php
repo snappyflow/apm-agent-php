@@ -34,17 +34,21 @@ final class WildcardListMatcher
     private $matchers;
 
     /**
-     * @param iterable<string> $wildcardExprs
+     * @param $wildcardExprs
      */
-    public function __construct(iterable $wildcardExprs)
+    public function __construct($wildcardExprs)
     {
-        $this->matchers = [];
-        foreach ($wildcardExprs as $wildcardExpr) {
-            $this->matchers[] = new WildcardMatcher($wildcardExpr);
-        }
+	    $this->matchers = [];
+	    if (is_array($wildcardExprs) || is_object($wildcardExprs)){
+        	foreach ($wildcardExprs as $wildcardExpr) {
+            		if ($wildcardExpr != '') {
+                	$this->matchers[] = new WildcardMatcher($wildcardExpr);
+            		}
+		}
+    	   }
     }
 
-    public function match(string $text): ?string
+    public function match(string $text)
     {
         foreach ($this->matchers as $matcher) {
             if ($matcher->match($text)) {
@@ -54,7 +58,7 @@ final class WildcardListMatcher
         return null;
     }
 
-    public static function matchNullable(?WildcardListMatcher $nullableMatcher, string $text): ?string
+    public static function matchNullable(WildcardListMatcher $nullableMatcher, string $text)
     {
         if ($nullableMatcher === null) {
             return null;

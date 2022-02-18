@@ -34,5 +34,5 @@ final class OptionDefaultValues
 {
     use StaticClassTrait;
 
-    public const TRANSACTION_MAX_SPANS = 500;
+    public static $TRANSACTION_MAX_SPANS = 500;
 }

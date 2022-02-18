@@ -42,21 +42,21 @@ final class NoopTracer implements TracerInterface
 
     /** @inheritDoc */
     public function beginCurrentTransaction(
-        ?string $name,
+        string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface {
         return NoopTransaction::singletonInstance();
     }
 
     /** @inheritDoc */
     public function captureCurrentTransaction(
-        ?string $name,
+        string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ) {
         return $callback(NoopTransaction::singletonInstance());
     }
@@ -75,21 +75,21 @@ final class NoopTracer implements TracerInterface
 
     /** @inheritDoc */
     public function beginTransaction(
-        ?string $name,
+        string $name,
         string $type,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ): TransactionInterface {
         return NoopTransaction::singletonInstance();
     }
 
     /** @inheritDoc */
     public function captureTransaction(
-        ?string $name,
+        string $name,
         string $type,
         Closure $callback,
-        ?float $timestamp = null,
-        ?string $serializedDistTracingData = null
+        float $timestamp = null,
+        string $serializedDistTracingData = null
     ) {
         return $callback(NoopTransaction::singletonInstance());
     }
@@ -101,24 +101,24 @@ final class NoopTracer implements TracerInterface
     }
 
     /** @inheritDoc */
-    public function createErrorFromThrowable(Throwable $throwable): ?string
+    public function createErrorFromThrowable(Throwable $throwable): string
     {
-        return null;
+        return "";
     }
 
     /** @inheritDoc */
-    public function createCustomError(CustomErrorData $customErrorData): ?string
+    public function createCustomError(CustomErrorData $customErrorData): string
     {
-        return null;
+        return "";
     }
 
     /** @inheritDoc */
-    public function pauseRecording(): void
+    public function pauseRecording()
     {
     }
 
     /** @inheritDoc */
-    public function resumeRecording(): void
+    public function resumeRecording()
     {
     }
 
@@ -129,7 +129,7 @@ final class NoopTracer implements TracerInterface
     }
 
     /** @inheritDoc */
-    public function setAgentEphemeralId(?string $ephemeralId): void
+    public function setAgentEphemeralId(string $ephemeralId)
     {
     }
 
@@ -140,7 +140,7 @@ final class NoopTracer implements TracerInterface
     }
 
     /** @inheritDoc */
-    public function injectDistributedTracingHeaders(Closure $headerInjector): void
+    public function injectDistributedTracingHeaders(Closure $headerInjector)
     {
     }
 }

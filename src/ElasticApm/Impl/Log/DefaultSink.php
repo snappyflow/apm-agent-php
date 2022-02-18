@@ -37,7 +37,7 @@ final class DefaultSink extends SinkBase
         int $srcCodeLine,
         string $srcCodeFunc,
         string $messageWithContext
-    ): void {
+    ) {
         /**
          * elastic_apm_* functions are provided by the elastic_apm extension
          *

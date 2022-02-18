@@ -583,7 +583,7 @@ For example assuming the outgoing request is associated with `$span`  :
 [source,php]
 ----
 $span->injectDistributedTracingHeaders(
-    function (string $headerName, string $headerValue) use ($myRequest): void {
+    function (string $headerName, string $headerValue) use ($myRequest) {
         $myRequest->addHeader($headerName, $headerValue);
     }
 );
@@ -596,7 +596,7 @@ Example:
 ----
 $myTransaction = ElasticApm::newTransaction('my TX name', 'my TX type')
     ->distributedTracingHeaderExtractor(
-        function (string $headerName) use ($myRequest): ?string {
+        function (string $headerName) use ($myRequest): string {
             return $myRequest->hasHeader($headerName)
                 ? $myRequest->getHeader($headerName)
                 : null;

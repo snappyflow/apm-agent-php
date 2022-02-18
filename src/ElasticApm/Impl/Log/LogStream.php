@@ -38,7 +38,7 @@ class LogStream implements LogStreamInterface
         return false;
     }
 
-    public function toLogAs($value): void
+    public function toLogAs($value)
     {
         $this->value = $value;
     }

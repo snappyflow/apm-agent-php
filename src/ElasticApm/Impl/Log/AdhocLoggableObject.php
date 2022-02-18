@@ -58,7 +58,7 @@ final class AdhocLoggableObject implements LoggableInterface
         return $this;
     }
 
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
         $stream->toLogAs($this->propertyNameToData);
     }

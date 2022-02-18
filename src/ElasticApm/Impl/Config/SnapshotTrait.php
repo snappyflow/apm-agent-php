@@ -40,7 +40,7 @@ trait SnapshotTrait
     /**
      * @param array<string, mixed> $optNameToParsedValue
      */
-    protected function setPropertiesToValuesFrom(array $optNameToParsedValue): void
+    protected function setPropertiesToValuesFrom(array $optNameToParsedValue)
     {
         foreach ($optNameToParsedValue as $optName => $parsedValue) {
             $propertyName = TextUtil::snakeToCamelCase($optName);

@@ -46,13 +46,13 @@ final class TransactionBuilder implements TransactionBuilderInterface
     /** @var bool */
     public $asCurrent = false;
 
-    /** @var ?float */
+    /** @var float */
     public $timestamp = null;
 
     /** @var ?Closure(string $headerName): null|string|string[] */
     public $headersExtractor = null;
 
-    /** @var ?string */
+    /** @var string */
     public $serializedDistTracingData = null;
 
     public function __construct(Tracer $tracer, string $name, string $type)

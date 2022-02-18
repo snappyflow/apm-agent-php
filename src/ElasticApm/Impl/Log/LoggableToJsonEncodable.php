@@ -40,9 +40,8 @@ final class LoggableToJsonEncodable
 {
     use StaticClassTrait;
 
-    private const IS_DTO_OBJECT_CACHE_MAX_COUNT_LOW_WATER_MARK = 10000;
-    private const IS_DTO_OBJECT_CACHE_MAX_COUNT_HIGH_WATER_MARK
-        = 2 * self::IS_DTO_OBJECT_CACHE_MAX_COUNT_LOW_WATER_MARK;
+    private static $IS_DTO_OBJECT_CACHE_MAX_COUNT_LOW_WATER_MARK = 10000;
+    private static $IS_DTO_OBJECT_CACHE_MAX_COUNT_HIGH_WATER_MARK = 20000;
 
     /** @var array<string, bool> */
     private static $isDtoObjectCache = [];
@@ -67,9 +66,9 @@ final class LoggableToJsonEncodable
         if (is_array($value)) {
             if ($depth >= 7) {
                 return [
-                    LogConsts::MAX_DEPTH_REACHED => $depth,
-                    LogConsts::TYPE_KEY          => DbgUtil::getType($value),
-                    LogConsts::ARRAY_COUNT_KEY   => count($value),
+                    LogConsts::$MAX_DEPTH_REACHED => $depth,
+                    LogConsts::$TYPE_KEY          => DbgUtil::getType($value),
+                    LogConsts::$ARRAY_COUNT_KEY   => count($value),
                 ];
             }
             return self::convertArray($value, $depth + 1);
@@ -82,14 +81,14 @@ final class LoggableToJsonEncodable
         if (is_object($value)) {
             if ($depth >= 7) {
                 return [
-                    LogConsts::MAX_DEPTH_REACHED => $depth,
-                    LogConsts::TYPE_KEY          => DbgUtil::getType($value),
+                    LogConsts::$MAX_DEPTH_REACHED => $depth,
+                    LogConsts::$TYPE_KEY          => DbgUtil::getType($value),
                 ];
             }
             return self::convertObject($value, $depth + 1);
         }
 
-        return [LogConsts::TYPE_KEY => DbgUtil::getType($value), LogConsts::VALUE_AS_STRING_KEY => strval($value)];
+        return [LogConsts::$TYPE_KEY => DbgUtil::getType($value), LogConsts::$VALUE_AS_STRING_KEY => strval($value)];
     }
 
     /**
@@ -129,14 +128,14 @@ final class LoggableToJsonEncodable
     {
         $arrayCount = count($array);
         $smallArrayMaxCount = $isListArray
-            ? LogConsts::SMALL_LIST_ARRAY_MAX_COUNT
-            : LogConsts::SMALL_MAP_ARRAY_MAX_COUNT;
+            ? LogConsts::$SMALL_LIST_ARRAY_MAX_COUNT
+            : LogConsts::$SMALL_MAP_ARRAY_MAX_COUNT;
         if ($arrayCount <= $smallArrayMaxCount) {
             return self::convertSmallArray($array, $isListArray, $depth);
         }
 
-        $result = [LogConsts::TYPE_KEY => LogConsts::LIST_ARRAY_TYPE_VALUE];
-        $result[LogConsts::ARRAY_COUNT_KEY] = $arrayCount;
+        $result = [LogConsts::$TYPE_KEY => LogConsts::$LIST_ARRAY_TYPE_VALUE];
+        $result[LogConsts::$ARRAY_COUNT_KEY] = $arrayCount;
 
         $halfOfSmallArrayMaxCount = intdiv($smallArrayMaxCount, 2);
         $firstElements = array_slice($array, 0, $halfOfSmallArrayMaxCount);
@@ -239,9 +238,9 @@ final class LoggableToJsonEncodable
     private static function convertOpenResource($resource): array
     {
         return [
-            LogConsts::TYPE_KEY          => LogConsts::RESOURCE_TYPE_VALUE,
-            LogConsts::RESOURCE_TYPE_KEY => get_resource_type($resource),
-            LogConsts::RESOURCE_ID_KEY   => intval($resource),
+            LogConsts::$TYPE_KEY          => LogConsts::$RESOURCE_TYPE_VALUE,
+            LogConsts::$RESOURCE_TYPE_KEY => get_resource_type($resource),
+            LogConsts::$RESOURCE_ID_KEY   => intval($resource),
         ];
     }
 
@@ -251,7 +250,7 @@ final class LoggableToJsonEncodable
      *
      * @return mixed
      */
-    private static function convertObject(object $object, int $depth)
+    private static function convertObject($object, int $depth)
     {
         if ($object instanceof LoggableInterface) {
             return self::convertLoggable($object, $depth);
@@ -267,22 +266,22 @@ final class LoggableToJsonEncodable
 
         if (method_exists($object, '__debugInfo')) {
             return [
-                LogConsts::TYPE_KEY                => get_class($object),
-                LogConsts::VALUE_AS_DEBUG_INFO_KEY => self::convert($object->__debugInfo(), $depth),
+                LogConsts::$TYPE_KEY                => get_class($object),
+                LogConsts::$VALUE_AS_DEBUG_INFO_KEY => self::convert($object->__debugInfo(), $depth),
             ];
         }
 
         if (method_exists($object, '__toString')) {
             return [
-                LogConsts::TYPE_KEY            => get_class($object),
-                LogConsts::VALUE_AS_STRING_KEY => self::convert($object->__toString(), $depth),
+                LogConsts::$TYPE_KEY            => get_class($object),
+                LogConsts::$VALUE_AS_STRING_KEY => self::convert($object->__toString(), $depth),
             ];
         }
 
         return [
-            LogConsts::TYPE_KEY        => get_class($object),
-            LogConsts::OBJECT_ID_KEY   => spl_object_id($object),
-            LogConsts::OBJECT_HASH_KEY => spl_object_hash($object),
+            LogConsts::$TYPE_KEY        => get_class($object),
+            LogConsts::$OBJECT_ID_KEY   => spl_object_id($object),
+            LogConsts::$OBJECT_HASH_KEY => spl_object_hash($object),
         ];
     }
 
@@ -308,8 +307,8 @@ final class LoggableToJsonEncodable
     private static function convertThrowable(Throwable $throwable, int $depth): array
     {
         return [
-            LogConsts::TYPE_KEY            => get_class($throwable),
-            LogConsts::VALUE_AS_STRING_KEY => self::convert($throwable->__toString(), $depth),
+            LogConsts::$TYPE_KEY            => get_class($throwable),
+            LogConsts::$VALUE_AS_STRING_KEY => self::convert($throwable->__toString(), $depth),
         ];
     }
 
@@ -346,7 +345,7 @@ final class LoggableToJsonEncodable
         return $nameToValue;
     }
 
-    private static function isDtoObject(object $object): bool
+    private static function isDtoObject($object): bool
     {
         $class = get_class($object);
         $valueInCache = ArrayUtil::getValueIfKeyExistsElse($class, self::$isDtoObjectCache, null);
@@ -396,13 +395,13 @@ final class LoggableToJsonEncodable
         return true;
     }
 
-    private static function addToIsDtoObjectCache(string $class, bool $value): void
+    private static function addToIsDtoObjectCache(string $class, bool $value)
     {
         $isDtoObjectCacheCount = count(self::$isDtoObjectCache);
-        if ($isDtoObjectCacheCount >= self::IS_DTO_OBJECT_CACHE_MAX_COUNT_HIGH_WATER_MARK) {
+        if ($isDtoObjectCacheCount >= self::$IS_DTO_OBJECT_CACHE_MAX_COUNT_HIGH_WATER_MARK) {
             self::$isDtoObjectCache = array_slice(
                 self::$isDtoObjectCache,
-                $isDtoObjectCacheCount - self::IS_DTO_OBJECT_CACHE_MAX_COUNT_LOW_WATER_MARK
+                $isDtoObjectCacheCount - self::$IS_DTO_OBJECT_CACHE_MAX_COUNT_LOW_WATER_MARK
             );
         }
 

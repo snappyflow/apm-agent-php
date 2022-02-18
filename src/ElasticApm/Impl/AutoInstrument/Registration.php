@@ -70,7 +70,7 @@ final class Registration implements LoggableInterface
         $this->preHook = $preHook;
     }
 
-    public function toLog(LogStreamInterface $stream): void
+    public function toLog(LogStreamInterface $stream)
     {
         $stream->toLogAs(
             [

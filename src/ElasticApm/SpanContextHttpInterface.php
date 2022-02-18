@@ -34,7 +34,7 @@ interface SpanContextHttpInterface
      *
      * @return void
      */
-    public function setUrl(?string $url): void;
+    public function setUrl(string $url);
 
     /**
      * The status code of the http request
@@ -45,7 +45,7 @@ interface SpanContextHttpInterface
      *
      * @return void
      */
-    public function setStatusCode(?int $statusCode): void;
+    public function setStatusCode(int $statusCode);
 
     /**
      * The method of the http request
@@ -58,5 +58,5 @@ interface SpanContextHttpInterface
      *
      * @return void
      */
-    public function setMethod(?string $method): void;
+    public function setMethod(string $method);
 }

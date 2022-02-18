@@ -49,7 +49,7 @@ class PerSpanTypeData implements LoggableInterface
      */
     public $perSubtypeData = [];
 
-    public function add(?string $subtype, float $selfTimeInMicroseconds): void
+    public function add(string $subtype, float $selfTimeInMicroseconds)
     {
         if ($subtype === null) {
             if ($this->noSubtypeData === null) {

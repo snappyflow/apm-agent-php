@@ -36,7 +36,7 @@ final class NoopSpanContextDestination implements SpanContextDestinationInterfac
     use NoopObjectTrait;
 
     /** @inheritDoc */
-    public function setService(string $name, string $resource, string $type): void
+    public function setService(string $name, string $resource, string $type)
     {
     }
 }

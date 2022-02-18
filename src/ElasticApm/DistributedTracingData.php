@@ -53,16 +53,16 @@ final class DistributedTracingData
      *
      * $headerInjector is callback to inject headers with signature
      *
-     *      (string $headerName, string $headerValue): void
+     *      (string $headerName, string $headerValue)
      *
      * @param Closure $headerInjector Callback that actually injects header(s) for the underlying transport
      *
-     * @phpstan-param Closure(string, string): void $headerInjector
+     * @phpstan-param Closure(string, string) $headerInjector
      */
-    public function injectHeaders(Closure $headerInjector): void
+    public function injectHeaders(Closure $headerInjector)
     {
         $headerInjector(
-            HttpDistributedTracing::TRACE_PARENT_HEADER_NAME,
+            HttpDistributedTracing::$TRACE_PARENT_HEADER_NAME,
             HttpDistributedTracing::buildTraceParentHeader($this)
         );
     }

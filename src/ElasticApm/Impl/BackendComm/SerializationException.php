@@ -33,7 +33,7 @@ use Throwable;
  */
 class SerializationException extends RuntimeException
 {
-    public function __construct(string $message, ?Throwable $causedBy = null)
+    public function __construct(string $message, Throwable $causedBy = null)
     {
         parent::__construct($message, /* code: */ 0, $causedBy);
     }
