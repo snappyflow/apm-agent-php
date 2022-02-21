@@ -198,5 +198,6 @@ if is_extension_enabled ; then
         echo "${PHP_INI_FILE_PATH} got some leftovers please delete the entries for the Elastic PHP agent manually"
     fi
 else
+    rm -rf /opt/elasticapm
     echo 'Extension has been removed successfully for Elastic PHP agent.'
 fi
