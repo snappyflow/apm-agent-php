@@ -34,7 +34,7 @@ mkdir -p ${EXTENSION_DIR}
 
 # wget link to tar file
 # cp output/sf-apm-php-agent-7.0.tar.gz /tmp
-wget -q https://github.com/snappyflow/apm-agent/releases/download/latest/sf-apm-php-agent-7.0-ubuntu16.tar.gz -O /tmp/sf-apm-php-agent.tar.gz
+wget -q https://github.com/snappyflow/apm-agent/releases/download/latest/sf-apm-php-agent-7.0.tar.gz -O /tmp/sf-apm-php-agent.tar.gz
 
 tar xzf /tmp/sf-apm-php-agent.tar.gz -C ${PHP_AGENT_DIR}
 

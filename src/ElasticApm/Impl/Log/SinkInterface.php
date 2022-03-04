@@ -49,7 +49,7 @@ interface SinkInterface
         string $srcCodeFile,
         int $srcCodeLine,
         string $srcCodeFunc,
-        bool $includeStacktrace,
+        bool $includeStacktrace = null,
         int $numberOfStackFramesToSkip
     );
 }

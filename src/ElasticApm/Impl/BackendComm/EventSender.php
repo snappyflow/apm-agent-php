@@ -60,8 +60,8 @@ final class EventSender implements EventSinkInterface
         Metadata $metadata,
         array $spansData,
         array $errorsData,
-        BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction,
-        TransactionData $transactionData
+        BreakdownMetricsPerTransaction $breakdownMetricsPerTransaction = null,
+        TransactionData $transactionData = null
     ) {
         $serializedMetadata = '{"metadata":';
         $serializedMetadata .= SerializationUtil::serializeAsJson($metadata);

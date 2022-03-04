@@ -58,7 +58,7 @@ final class WildcardListMatcher
         return null;
     }
 
-    public static function matchNullable(WildcardListMatcher $nullableMatcher, string $text)
+    public static function matchNullable(WildcardListMatcher $nullableMatcher = null, string $text)
     {
         if ($nullableMatcher === null) {
             return null;

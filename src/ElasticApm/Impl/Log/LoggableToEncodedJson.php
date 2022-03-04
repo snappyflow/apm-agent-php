@@ -47,7 +47,7 @@ final class LoggableToEncodedJson
     public static function convert(
         $value,
         bool $prettyPrint = false,
-        /** @noinspection PhpUnusedParameterInspection */ int $lengthLimit = LoggableToString::DEFAULT_LENGTH_LIMIT
+        /** @noinspection PhpUnusedParameterInspection */ int $lengthLimit = 1000
     ): string {
         try {
             $jsonEncodable = LoggableToJsonEncodable::convert($value, /* depth: */ 0);

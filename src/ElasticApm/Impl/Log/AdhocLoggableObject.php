@@ -39,7 +39,7 @@ final class AdhocLoggableObject implements LoggableInterface
      */
     public function __construct(
         array $nameToValue,
-        int $logPriority = PropertyLogPriority::NORMAL
+        int $logPriority = 1
     ) {
         $this->addProperties($nameToValue, $logPriority);
     }
@@ -52,7 +52,7 @@ final class AdhocLoggableObject implements LoggableInterface
      */
     public function addProperties(
         array $nameToValue,
-        /** @noinspection PhpUnusedParameterInspection */ int $logPriority = PropertyLogPriority::NORMAL
+        /** @noinspection PhpUnusedParameterInspection */ int $logPriority = 1
     ): self {
         $this->propertyNameToData += $nameToValue;
         return $this;

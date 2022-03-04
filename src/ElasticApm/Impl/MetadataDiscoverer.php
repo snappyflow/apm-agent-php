@@ -81,7 +81,7 @@ final class MetadataDiscoverer
             : Tracer::limitKeywordString($charsAdaptedName);
     }
 
-    public static function setKeywordStringIfNotNull($srcCfgVal, &$dstProp)
+    public static function setKeywordStringIfNotNull($srcCfgVal = null, &$dstProp = null)
     {
         if ($srcCfgVal !== null) {
             $dstProp = Tracer::limitKeywordString($srcCfgVal);

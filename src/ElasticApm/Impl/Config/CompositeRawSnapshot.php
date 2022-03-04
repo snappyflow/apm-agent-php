@@ -43,15 +43,11 @@ final class CompositeRawSnapshot implements RawSnapshotInterface
 
     public function valueFor(string $optionName)
     {
-	foreach ($this->subSnapshots as $subSnapshot) {
-	   $value = $subSnapshot->valueFor($optionName);
-	   if (!is_null($value)) {
-		return $value;
-	   } else {
-		return "";
-	   }
-
+        foreach ($this->subSnapshots as $subSnapshot) {
+            if (!is_null($value = $subSnapshot->valueFor($optionName))) {
+                return $value;
+            }
         }
-        return "";
+        return null;
     }
 }

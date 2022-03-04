@@ -95,7 +95,7 @@ final class InterceptionManager
      */
     public function interceptedCallPreHook(
         int $interceptRegistrationId,
-        $thisObj,
+        $thisObj = null,
         $interceptedCallArgs
     ): bool {
         $localLogger = $this->logger->inherit()->addContext('interceptRegistrationId', $interceptRegistrationId);

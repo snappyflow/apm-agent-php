@@ -39,9 +39,9 @@ final class NoopTransaction extends NoopExecutionSegment implements TransactionI
     use NoopObjectTrait;
 
     /** @inheritDoc */
-    public function getParentId(): string
+    public function getParentId()
     {
-        return "";
+        return null;
     }
 
     /** @inheritDoc */
@@ -79,9 +79,9 @@ final class NoopTransaction extends NoopExecutionSegment implements TransactionI
     }
 
     /** @inheritDoc */
-    public function getResult(): string
+    public function getResult()
     {
-        return "";
+        return null;
     }
 
     /** @inheritDoc */

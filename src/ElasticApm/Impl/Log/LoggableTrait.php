@@ -33,9 +33,9 @@ use ReflectionException;
  */
 trait LoggableTrait
 {
-    protected static function classNameToLog(): string
+    protected static function classNameToLog()
     {
-        return "";
+        return null;
     }
 
     /**

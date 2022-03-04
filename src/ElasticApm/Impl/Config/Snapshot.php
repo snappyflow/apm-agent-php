@@ -200,7 +200,7 @@ final class Snapshot implements LoggableInterface
         return $this->devInternalParsed;
     }
 
-    public function disableInstrumentations(): WildcardListMatcher
+    public function disableInstrumentations()
     {
         return $this->disableInstrumentations;
     }
@@ -215,12 +215,12 @@ final class Snapshot implements LoggableInterface
         return $this->enabled;
     }
 
-    public function environment(): string
+    public function environment()
     {
         return $this->environment;
     }
 
-    public function hostname(): string
+    public function hostname()
     {
         return $this->hostname;
     }
@@ -237,22 +237,22 @@ final class Snapshot implements LoggableInterface
         return $this->serverTimeout;
     }
 
-    public function serviceName(): string
+    public function serviceName()
     {
         return $this->serviceName;
     }
 
-    public function serviceNodeName(): string
+    public function serviceNodeName()
     {
         return $this->serviceNodeName;
     }
 
-    public function serviceVersion(): string
+    public function serviceVersion()
     {
         return $this->serviceVersion;
     }
 
-    public function transactionIgnoreUrls(): WildcardListMatcher
+    public function transactionIgnoreUrls()
     {
         return $this->transactionIgnoreUrls;
     }
@@ -267,12 +267,12 @@ final class Snapshot implements LoggableInterface
         return $this->transactionSampleRate;
     }
 
-    public function urlGroups(): WildcardListMatcher
+    public function urlGroups()
     {
         return $this->urlGroups;
     }
     
-    public function globalLabels(): string
+    public function globalLabels()
     {
         return $this->globalLabels;
     }

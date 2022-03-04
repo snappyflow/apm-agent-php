@@ -86,9 +86,9 @@ abstract class NoopExecutionSegment implements ExecutionSegmentInterface, Loggab
     }
 
     /** @inheritDoc */
-    public function getOutcome(): string
+    public function getOutcome()
     {
-        return "";
+        return null;
     }
 
     /** @inheritDoc */
@@ -137,15 +137,15 @@ abstract class NoopExecutionSegment implements ExecutionSegmentInterface, Loggab
     }
 
     /** @inheritDoc */
-    public function createErrorFromThrowable(Throwable $throwable): string
+    public function createErrorFromThrowable(Throwable $throwable)
     {
-        return "";
+        return null;
     }
 
     /** @inheritDoc */
-    public function createCustomError(CustomErrorData $customErrorData): string
+    public function createCustomError(CustomErrorData $customErrorData)
     {
-        return "";
+        return null;
     }
 
     /** @inheritDoc */

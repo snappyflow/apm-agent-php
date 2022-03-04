@@ -53,7 +53,7 @@ final class SnapshotDevInternal implements LoggableInterface
     /** @var bool */
     private $gcMemCachesAfterEveryTransaction = false;
 
-    public function __construct(WildcardListMatcher $devInternal, LoggerFactory $loggerFactory)
+    public function __construct(WildcardListMatcher $devInternal = null, LoggerFactory $loggerFactory)
     {
         $logger = $loggerFactory->loggerForClass(LogCategory::$CONFIGURATION, __NAMESPACE__, __CLASS__, __FILE__);
 

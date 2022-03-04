@@ -73,7 +73,7 @@ class PerTransaction implements LoggableInterface
         return $this->isSelfTimeEnabled;
     }
 
-    public function addSpanSelfTime(string $type, string $subtype, float $selfTimeInMicroseconds)
+    public function addSpanSelfTime(string $type, string $subtype = null, float $selfTimeInMicroseconds)
     {
         if (!array_key_exists($type, $this->perSpanTypeData)) {
             $this->perSpanTypeData[$type] = new PerSpanTypeData();
