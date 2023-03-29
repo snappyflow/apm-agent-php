@@ -12,10 +12,10 @@ fi
 
 if [  $IS_UBUNTU == 1 ]; then
     echo "Ubuntu found"
-    apt install build-essential php-dev libcurl4-openssl-dev jq git -y
+    apt install build-essential libcurl4-openssl-dev jq git -y
 elif [ $IS_RHEL == 1 ]; then
     echo "centos found"
-    yum install libcurl-devel php-devel jq git -y && yum group install "Development Tools"
+    yum install libcurl-devel jq git -y && yum group install "Development Tools"
 fi
 
 
