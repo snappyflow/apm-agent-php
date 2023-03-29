@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace Elastic\Apm\Impl\BackendComm;
 
 use Elastic\Apm\Impl\OptionalSerializableDataInterface;
+use Elastic\Apm\Impl\Util\ArrayUtil;
 use Elastic\Apm\Impl\Util\ExceptionUtil;
 use Elastic\Apm\Impl\Util\JsonUtil;
 use Elastic\Apm\Impl\Util\StaticClassTrait;
@@ -54,7 +55,7 @@ final class SerializationUtil
             $serializedData = JsonUtil::encode($data);
         } catch (Exception $ex) {
             throw new SerializationException(
-                ExceptionUtil::buildMessage('Serialization failed', ['data' => $data]),
+                ExceptionUtil::buildMessage('Serialization failed', ['data' => $data, 'original exception' => $ex]),
                 $ex
             );
         }
@@ -92,6 +93,19 @@ final class SerializationUtil
         self::assertNotExists($name, $value, $nameToValue);
 
         $nameToValue[$name] = $value;
+    }
+
+    /**
+     * @param string                                                            $name
+     * @param null|bool|int|float|string|JsonSerializable|stdClass|array<mixed> $value
+     * @param array<string, mixed>                                              $nameToValue
+     *
+     * @return void
+     */
+    public static function addNameValueAssumeNotNull(string $name, $value, array &$nameToValue): void
+    {
+        /** @var bool|int|float|string|JsonSerializable|stdClass|array<mixed> $value */
+        self::addNameValue($name, $value, /* ref */ $nameToValue);
     }
 
     /**
@@ -168,7 +182,7 @@ final class SerializationUtil
      */
     public static function ensureObject(array $nameToValue)
     {
-        return empty($nameToValue) ? (new stdClass()) : $nameToValue;
+        return ArrayUtil::isEmpty($nameToValue) ? (new stdClass()) : $nameToValue;
     }
 
     /**

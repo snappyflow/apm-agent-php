@@ -24,12 +24,9 @@ declare(strict_types=1);
 namespace Elastic\Apm\Impl\Config;
 
 use Elastic\Apm\Impl\Log\Level as LogLevel;
-use Elastic\Apm\Impl\Log\LogCategory;
 use Elastic\Apm\Impl\Log\LoggableInterface;
 use Elastic\Apm\Impl\Log\LoggableTrait;
-use Elastic\Apm\Impl\Log\Logger;
 use Elastic\Apm\Impl\Log\LoggerFactory;
-use Elastic\Apm\Impl\Util\TextUtil;
 use Elastic\Apm\Impl\Util\WildcardListMatcher;
 
 /**
@@ -65,7 +62,7 @@ final class Snapshot implements LoggableInterface
     //              /** @var <my_new_option type> */
     //              private $myNewOption;
     //
-    //         to \Elastic\Apm\Impl\Config\Snapshot class
+    //         to class \Elastic\Apm\Impl\Config\Snapshot
     //
     //
     //      5) Add
@@ -75,7 +72,7 @@ final class Snapshot implements LoggableInterface
     //                 return $this->myNewOption;
     //             }
     //
-    //         to \Elastic\Apm\Impl\Config\Snapshot class
+    //         to class \Elastic\Apm\Impl\Config\Snapshot
     //
     //
     //      6) Add
@@ -83,7 +80,7 @@ final class Snapshot implements LoggableInterface
     //             OptionNames::MY_NEW_OPTION => <my_new_option type>RawToParsedValues,
     //
     //         to return value of buildOptionNameToRawToValue()
-    //             in \ElasticApmTests\ComponentTests\ConfigSettingTest class
+    //             in class \ElasticApmTests\ComponentTests\ConfigSettingTest
     //
     //
     //      7) Optionally add option specific test such as \ElasticApmTests\ComponentTests\ApiKeyTest
@@ -91,6 +88,9 @@ final class Snapshot implements LoggableInterface
     //
     use SnapshotTrait;
     use LoggableTrait;
+
+    public const LOG_LEVEL_STDERR_DEFAULT = LogLevel::CRITICAL;
+    public const LOG_LEVEL_SYSLOG_DEFAULT = LogLevel::INFO;
 
     /** @var array<string, mixed> */
     private $optNameToParsedValue;
@@ -103,6 +103,9 @@ final class Snapshot implements LoggableInterface
 
     /** @var bool */
     private $breakdownMetrics;
+
+    /** @var bool */
+    private $captureErrors;
 
     /** @var ?WildcardListMatcher */
     private $devInternal;
@@ -133,6 +136,21 @@ final class Snapshot implements LoggableInterface
 
     /** @var ?int */
     private $logLevelSyslog;
+
+    /** @var int */
+    private $nonKeywordStringMaxLength;
+
+    /** @var bool */
+    private $profilingInferredSpansEnabled;
+
+    /** @var float */
+    private $profilingInferredSpansMinDuration;
+
+    /** @var float */
+    private $profilingInferredSpansSamplingInterval;
+
+    /** @var WildcardListMatcher */
+    private $sanitizeFieldNames;
 
     /** @var string */
     private $secretToken;
@@ -167,6 +185,9 @@ final class Snapshot implements LoggableInterface
     /** @var string */
     private $globalLabels;
 
+    /** @var int */
+    private $effectiveLogLevel;
+
     /**
      * Snapshot constructor.
      *
@@ -174,10 +195,39 @@ final class Snapshot implements LoggableInterface
      */
     public function __construct(array $optNameToParsedValue, LoggerFactory $loggerFactory)
     {
-        $this->optNameToParsedValue = $optNameToParsedValue;
         $this->setPropertiesToValuesFrom($optNameToParsedValue);
 
+        $this->setEffectiveLogLevel();
+        $this->adaptTransactionSampleRate();
+
         $this->devInternalParsed = new SnapshotDevInternal($this->devInternal, $loggerFactory);
+    }
+
+    private function setEffectiveLogLevel(): void
+    {
+        $this->effectiveLogLevel = max(
+            ($this->logLevelStderr ?? $this->logLevel) ?? self::LOG_LEVEL_STDERR_DEFAULT,
+            ($this->logLevelSyslog ?? $this->logLevel) ?? self::LOG_LEVEL_SYSLOG_DEFAULT,
+            $this->logLevel ?? LogLevel::OFF
+        );
+    }
+
+    private function adaptTransactionSampleRate(): void
+    {
+        if ($this->transactionSampleRate === 0.0) {
+            return;
+        }
+
+        $minNonZeroValue = 0.0001;
+        if ($this->transactionSampleRate < $minNonZeroValue) {
+            $this->transactionSampleRate = $minNonZeroValue;
+            return;
+        }
+
+        $this->transactionSampleRate = round(
+            $this->transactionSampleRate,
+            4 /* <- precision - number of decimal digits */
+        );
     }
 
     /**
@@ -195,6 +245,11 @@ final class Snapshot implements LoggableInterface
         return $this->breakdownMetrics;
     }
 
+    public function captureErrors(): bool
+    {
+        return $this->captureErrors;
+    }
+
     public function devInternal(): SnapshotDevInternal
     {
         return $this->devInternalParsed;
@@ -208,6 +263,11 @@ final class Snapshot implements LoggableInterface
     public function disableSend(): bool
     {
         return $this->disableSend;
+    }
+
+    public function effectiveLogLevel(): int
+    {
+        return $this->effectiveLogLevel;
     }
 
     public function enabled(): bool
@@ -225,11 +285,29 @@ final class Snapshot implements LoggableInterface
         return $this->hostname;
     }
 
-    public function effectiveLogLevel(): int
+    public function nonKeywordStringMaxLength(): int
     {
-        $effectiveLogLevelStderr = ($this->logLevelStderr ?? $this->logLevel) ?? LogLevel::INFO;
-        $effectiveLogLevelSyslog = ($this->logLevelSyslog ?? $this->logLevel) ?? LogLevel::CRITICAL;
-        return max($effectiveLogLevelStderr, $effectiveLogLevelSyslog, $this->logLevel ?? LogLevel::OFF);
+        return $this->nonKeywordStringMaxLength;
+    }
+
+    public function profilingInferredSpansEnabled(): bool
+    {
+        return $this->profilingInferredSpansEnabled;
+    }
+
+    public function profilingInferredSpansMinDurationInMilliseconds(): float
+    {
+        return $this->profilingInferredSpansMinDuration;
+    }
+
+    public function profilingInferredSpansSamplingInterval(): float
+    {
+        return $this->profilingInferredSpansSamplingInterval;
+    }
+
+    public function sanitizeFieldNames(): WildcardListMatcher
+    {
+        return $this->sanitizeFieldNames;
     }
 
     public function serverTimeout(): float

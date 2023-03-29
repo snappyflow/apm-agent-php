@@ -26,7 +26,7 @@ namespace Elastic\Apm\Impl\BreakdownMetrics;
 use Closure;
 use Elastic\Apm\Impl\Log\LoggableInterface;
 use Elastic\Apm\Impl\Log\LoggableTrait;
-use Elastic\Apm\Impl\MetricSetData;
+use Elastic\Apm\Impl\MetricSet;
 use Elastic\Apm\Impl\Transaction;
 
 /**
@@ -42,9 +42,6 @@ class PerTransaction implements LoggableInterface
 {
     use LoggableTrait;
 
-    public const TRANSACTION_DURATION_COUNT_SAMPLE_KEY = 'transaction.duration.count';
-    public const TRANSACTION_DURATION_SUM_US_SAMPLE_KEY = 'transaction.duration.sum.us';
-
     public const TRANSACTION_BREAKDOWN_COUNT_SAMPLE_KEY = 'transaction.breakdown.count';
     public const SPAN_SELF_TIME_COUNT_SAMPLE_KEY = 'span.self_time.count';
     public const SPAN_SELF_TIME_SUM_US_SAMPLE_KEY = 'span.self_time.sum.us';
@@ -53,24 +50,12 @@ class PerTransaction implements LoggableInterface
     /** @var Transaction */
     private $transaction;
 
-    /** @var bool */
-    private $isSelfTimeEnabled;
-
     /** @var array<string, PerSpanTypeData> */
     private $perSpanTypeData = [];
 
-    /** @var float */
-    private $transactionDuration;
-
-    public function __construct(Transaction $transaction, bool $isSelfTimeEnabled)
+    public function __construct(Transaction $transaction)
     {
         $this->transaction = $transaction;
-        $this->isSelfTimeEnabled = $isSelfTimeEnabled;
-    }
-
-    public function isSelfTimeEnabled(): bool
-    {
-        return $this->isSelfTimeEnabled;
     }
 
     public function addSpanSelfTime(string $type, ?string $subtype, float $selfTimeInMicroseconds): void
@@ -81,17 +66,12 @@ class PerTransaction implements LoggableInterface
         $this->perSpanTypeData[$type]->add($subtype, $selfTimeInMicroseconds);
     }
 
-    public function finalize(float $transactionDurationInMicroseconds): void
-    {
-        $this->transactionDuration = $transactionDurationInMicroseconds;
-    }
-
     /**
-     * @param Closure(MetricSetData): void $consumeMetricSet
+     * @param Closure(MetricSet): void $consumeMetricSet
      */
     public function forEachMetricSet(Closure $consumeMetricSet): void
     {
-        $metricSet = new MetricSetData();
+        $metricSet = new MetricSet();
         $metricSet->timestamp = $this->transaction->getTimestamp();
         $metricSet->transactionName = $this->transaction->getName();
         $metricSet->transactionType = $this->transaction->getType();
@@ -115,15 +95,11 @@ class PerTransaction implements LoggableInterface
         $metricSet->spanType = null;
         $metricSet->spanSubtype = null;
         $metricSet->clearSamples();
-        if ($this->isSelfTimeEnabled) {
-            $metricSet->setSample(self::TRANSACTION_BREAKDOWN_COUNT_SAMPLE_KEY, 1);
-        }
-        $metricSet->setSample(self::TRANSACTION_DURATION_COUNT_SAMPLE_KEY, 1);
-        $metricSet->setSample(self::TRANSACTION_DURATION_SUM_US_SAMPLE_KEY, $this->transactionDuration);
+        $metricSet->setSample(self::TRANSACTION_BREAKDOWN_COUNT_SAMPLE_KEY, 1);
         $consumeMetricSet($metricSet);
     }
 
-    private static function setSelfTimeSamples(LeafData $leafData, MetricSetData $dstMetricSet): void
+    private static function setSelfTimeSamples(LeafData $leafData, MetricSet $dstMetricSet): void
     {
         $dstMetricSet->setSample(self::SPAN_SELF_TIME_COUNT_SAMPLE_KEY, $leafData->count);
         $dstMetricSet->setSample(self::SPAN_SELF_TIME_SUM_US_SAMPLE_KEY, $leafData->sumMicroseconds);

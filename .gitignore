@@ -40,5 +40,8 @@ build/
 # Backup files when using sed
 .bck
 
+# For local development
+z_local*
 
-install_elastic_apm_dev.sh
+# Temporary files
+_TEMP/

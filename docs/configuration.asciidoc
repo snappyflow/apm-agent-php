@@ -7,7 +7,7 @@ endif::[]
 == Configuration
 
 Utilize configuration options to adapt the Elastic APM agent to your needs.
-One way to configure settings is with the `php.ini` file:```
+One way to configure settings is with the `php.ini` file:
 
 [source,ini]
 ----
@@ -31,11 +31,8 @@ NOTE: If you use environment variables to configure the agent, make sure the pro
 === {ess} on {ecloud}
 
 The agent can be configured to send data to an {ess-product}[{ess} APM instance] by
-setting <<config-server-url>> and <<config-secret-token>> options
-to the corresponding values found in the APM section of {ecloud}:
-
-[role="screenshot"]
-image::./images/elastic_cloud_apm_config.png[Example view of Elastic Cloud host and secret_token]
+setting the <<config-server-url>> and <<config-secret-token>> options
+to the corresponding values found in the APM & Fleet section of {ecloud}.
 
 Configure the agent, for example via `php.ini`:
 
@@ -90,6 +87,55 @@ except for `syslog`, where the log level is set to `TRACE`.
 elastic_apm.log_level=WARNING
 elastic_apm.log_level_syslog=TRACE
 ----
+
+[float]
+[[configure-duration-format]]
+=== Duration format
+The _duration_ format is used for configuration options like timeouts.
+The units are provided as a suffix
+either directly after the number or separated by any amount of whitespace.
+The units are case insensitive so they can be provided in either lower, upper or even mixed case.
+
+*Supported units:*
+
+- `ms` (milliseconds)
+- `s` (seconds)
+- `m` (minutes)
+
+*Example:* `5m` (interpreted as 5 minutes) or `10 mS` (interpreted as 10 milliseconds).
+
+*Default units:* Each configuration option with value specifiying a duration has default units.
+This allows omitting the units in option value.
+For example if option's default units are `s` (seconds) then value `10` is interpreted as 10 seconds.
+
+NOTE: Different configuration options might have different default units
+so it's always preferable to provide units explicitly.
+
+[float]
+[[configure-size-format]]
+=== Size format
+The _size_ format is used for options such as maximum buffer sizes.
+The units are provided as a suffix
+either directly after the number or separated by any amount of whitespace.
+The units are case insensitive so they can be provided in either lower, upper or even mixed case.
+
+*Supported units:*
+
+- B (bytes)
+- KB (kilobytes)
+- MB (megabytes)
+- GB (gigabytes)
+
+NOTE: We use the power-of-two sizing convention, e.g. 1KB = 1024B.
+
+*Example:* `34KB` (interpreted as 34 kilobytes) or `78 mB` (interpreted as 78 megabytes).
+
+*Default units:* Each configuration option with value specifiying a size has default units.
+This allows omitting the units in option value.
+For example if option's default units are `KB` (kilobytes) then value `10` is interpreted as 10 kilobytes.
+
+NOTE: Different configuration options might have different default units
+so it's always preferable to provide units explicitly.
 
 [float]
 [[configure-wildcard]]
@@ -172,7 +218,7 @@ your communications using HTTPS. Unless you do so, your API Key could be observe
 
 If this configuration option is set to `true` the agent will collect and report
 breakdown metrics (`span.self_time`) used for "Time spent by span type" chart.
-Set it to `false` to disables the collection and reporting of
+Set it to `false` to disable the collection and reporting of
 breakdown metrics, which can reduce the overhead of the agent.
 
 NOTE: This feature requires APM Server and Kibana >= 7.3.
@@ -395,9 +441,9 @@ your communications using HTTPS. Unless you do so, your secret token could be ob
 If a request sending events to the APM server takes longer than the configured timeout,
 the request is canceled and the events are discarded.
 
-This configuration option supports the duration suffixes: `ms`, `s` and `m`.
-For example: `10s`.
-This option's default unit is `s`, so `5` is interpreted as `5s`.
+The value has to be provided in *<<configure-duration-format, duration format>>*.
+
+This option's default unit is `s` (seconds).
 
 If the value is `0` (or `0ms`, `0s`, etc.) the timeout for sending events to the APM Server is disabled.
 
@@ -434,7 +480,7 @@ The URL for your APM Server. The URL must be fully qualified, including protocol
 [options="header"]
 |============
 | Default                          | Type
-| `Unnamed PHP service`       | String
+| `unknown-php-service`       | String
 |============
 
 This is used to keep all the errors and transactions of your service together

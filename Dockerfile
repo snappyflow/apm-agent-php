@@ -22,6 +22,12 @@ WORKDIR /app/src/ext
 
 ENV NO_INTERACTION=1
 
+# C call stack capture should be supported on non-Alpine by default
+ENV ELASTIC_APM_ASSUME_CAN_CAPTURE_C_STACK_TRACE=true
+
+# Disable agent for auxiliary PHP processes to reduce noise in logs
+ENV ELASTIC_APM_ENABLED=false
+
 CMD phpize \
     && CFLAGS="-std=gnu99" ./configure --enable-elastic_apm \
     && make clean \

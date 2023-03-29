@@ -23,30 +23,26 @@ declare(strict_types=1);
 
 namespace ElasticApmTests\Util;
 
-use Ds\Queue;
-use Ds\Set;
-use Elastic\Apm\Impl\BackendComm\SerializationUtil;
+use Elastic\Apm\Impl\Config\AllOptionsMetadata;
+use Elastic\Apm\Impl\Config\OptionWithDefaultValueMetadata;
 use Elastic\Apm\Impl\Constants;
 use Elastic\Apm\Impl\EventSinkInterface;
-use Elastic\Apm\Impl\ExecutionSegmentContextData;
-use Elastic\Apm\Impl\ExecutionSegmentData;
 use Elastic\Apm\Impl\Log\Backend as LogBackend;
-use Elastic\Apm\Impl\Log\EnabledLoggerProxy;
 use Elastic\Apm\Impl\Log\Level as LogLevel;
 use Elastic\Apm\Impl\Log\LoggableToString;
+use Elastic\Apm\Impl\Log\Logger;
 use Elastic\Apm\Impl\Log\LoggerFactory;
-use Elastic\Apm\Impl\Log\LoggingSubsystem;
 use Elastic\Apm\Impl\Log\NoopLogSink;
 use Elastic\Apm\Impl\NoopEventSink;
-use Elastic\Apm\Impl\SpanData;
-use Elastic\Apm\Impl\TransactionData;
 use Elastic\Apm\Impl\Util\ArrayUtil;
 use Elastic\Apm\Impl\Util\DbgUtil;
+use Elastic\Apm\Impl\Util\RangeUtil;
 use Elastic\Apm\Impl\Util\TimeUtil;
-use ElasticApmTests\ComponentTests\Util\AmbientContext;
-use ElasticApmTests\ComponentTests\Util\FlakyAssertions;
+use ElasticApmTests\ComponentTests\Util\AmbientContextForTests;
 use PHPUnit\Framework\Constraint\Exception as ConstraintException;
+use PHPUnit\Framework\Constraint\GreaterThan;
 use PHPUnit\Framework\Constraint\IsEqual;
+use PHPUnit\Framework\Constraint\IsType;
 use PHPUnit\Framework\Constraint\LessThan;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
@@ -54,286 +50,25 @@ use Throwable;
 
 class TestCaseBase extends TestCase
 {
-    // Compare up to 10 milliseconds (10000 microseconds) precision
-    public const TIMESTAMP_COMPARISON_PRECISION = 10000;
-
-    /** @var LoggerFactory */
-    private static $noopLoggerFactory;
-
-    /** @var bool */
-    public static $isUnitTest = true;
-
     /**
-     * @param mixed        $name
-     * @param array<mixed> $data
-     * @param mixed        $dataName
+     * 10 milliseconds (10000 microseconds) precision
      */
-    public function __construct($name = null, array $data = [], $dataName = '')
-    {
-        LoggingSubsystem::$isInTestingContext = true;
-        SerializationUtil::$isInTestingContext = true;
+    public const TIMESTAMP_COMPARISON_PRECISION_MICROSECONDS = 10000;
 
-        parent::__construct($name, $data, $dataName);
-    }
+    public const DURATION_COMPARISON_PRECISION_MILLISECONDS = self::TIMESTAMP_COMPARISON_PRECISION_MICROSECONDS / 1000;
 
-    public static function assertEqualTimestamp(float $expected, float $actual): void
-    {
-        self::assertEqualsWithDelta($expected, $actual, self::TIMESTAMP_COMPARISON_PRECISION);
-    }
+    /** @var ?LoggerFactory */
+    private static $noopLoggerFactory = null;
 
-    public static function assertLessThanOrEqualTimestamp(float $lhs, float $rhs): void
-    {
-        self::assertThat(
-            $lhs,
-            self::logicalOr(
-                new IsEqual($rhs, /* delta: */ self::TIMESTAMP_COMPARISON_PRECISION),
-                new LessThan($rhs)
-            ),
-            ' $lhs: ' . number_format($lhs) . ', $rhs: ' . number_format($rhs)
-        );
-    }
+    /** @var ?Logger */
+    private $logger = null;
 
-    public static function assertLessThanOrEqualDuration(float $lhs, float $rhs): void
-    {
-        self::assertThat($lhs, self::logicalOr(new IsEqual($rhs, /* delta: */ 1), new LessThan($rhs)));
-    }
-
-    public static function calcEndTime(ExecutionSegmentData $timedData): float
-    {
-        return $timedData->timestamp + TimeUtil::millisecondsToMicroseconds($timedData->duration);
-    }
-
-    public static function assertTimestampIsInside(float $innerTimestamp, ExecutionSegmentData $outerExecSeg): void
-    {
-        self::assertLessThanOrEqualTimestamp($outerExecSeg->timestamp, $innerTimestamp);
-        self::assertLessThanOrEqualTimestamp($innerTimestamp, self::calcEndTime($outerExecSeg));
-    }
-
-    public static function assertTimedEventIsNested(
-        ExecutionSegmentData $nestedExecSeg,
-        ExecutionSegmentData $outerExecSeg
-    ): void {
-        self::assertTimestampIsInside($nestedExecSeg->timestamp, $outerExecSeg);
-        self::assertTimestampIsInside(self::calcEndTime($nestedExecSeg), $outerExecSeg);
-    }
-
-    /**
-     * @param TransactionData         $transaction
-     * @param array<string, SpanData> $idToSpan
-     * @param bool                    $forceEnableFlakyAssertions
-     */
-    public static function assertValidTransactionAndItsSpans(
-        TransactionData $transaction,
-        array $idToSpan,
-        bool $forceEnableFlakyAssertions = false
-    ): void {
-        ValidationUtil::assertValidTransactionData($transaction);
-
-        /** @var SpanData $span */
-        foreach ($idToSpan as $span) {
-            ValidationUtil::assertValidSpanData($span);
-            self::assertSame($transaction->id, $span->transactionId);
-            self::assertSame($transaction->traceId, $span->traceId);
-
-            if ($span->parentId === $transaction->id) {
-                self::assertTimedEventIsNested($span, $transaction);
-            } else {
-                self::assertArrayHasKey($span->parentId, $idToSpan, 'count($idToSpan): ' . count($idToSpan));
-                self::assertTimedEventIsNested($span, $idToSpan[$span->parentId]);
-            }
-        }
-
-        FlakyAssertions::run(
-            function () use ($transaction, $idToSpan): void {
-                self::assertValidTransactionAndItsSpansFlakyPart($transaction, $idToSpan);
-            },
-            $forceEnableFlakyAssertions
-        );
-    }
-
-    /**
-     * @param TransactionData         $transaction
-     * @param array<string, SpanData> $idToSpan
-     */
-    private static function assertValidTransactionAndItsSpansFlakyPart(
-        TransactionData $transaction,
-        array $idToSpan
-    ): void {
-        self::assertCount($transaction->startedSpansCount, $idToSpan);
-
-        $spanIdToParentId = [];
-        foreach ($idToSpan as $id => $span) {
-            $spanIdToParentId[$id] = $span->parentId;
-        }
-        self::assertGraphIsTree($transaction->id, $spanIdToParentId);
-    }
-
-    /**
-     * @param string                $rootId
-     * @param array<string, string> $idToParentId
-     */
-    private static function assertGraphIsTree(string $rootId, array $idToParentId): void
-    {
-        /** @var Set<string> */
-        $idsReachableFromRoot = new Set();
-
-        /** @var Queue<string> */
-        $reachableToProcess = new Queue([$rootId]);
-
-        while (!$reachableToProcess->isEmpty()) {
-            $currentParentId = $reachableToProcess->pop();
-            foreach ($idToParentId as $id => $parentId) {
-                if ($currentParentId === $parentId) {
-                    self::assertTrue(!$idsReachableFromRoot->contains($id));
-                    $idsReachableFromRoot->add($id);
-                    $reachableToProcess->push($id);
-                }
-            }
-        }
-
-        self::assertCount($idsReachableFromRoot->count(), $idToParentId);
-    }
-
-    /**
-     * @param array<string, SpanData> $idToSpan
-     *
-     * @return array<string, array<string, SpanData>>
-     */
-    public static function groupSpansByTransactionId(array $idToSpan): array
-    {
-        /** @var array<string, array<string, SpanData>> */
-        $transactionIdToSpans = [];
-
-        /** @var SpanData $span */
-        foreach ($idToSpan as $spanId => $span) {
-            if (!array_key_exists($span->transactionId, $transactionIdToSpans)) {
-                $transactionIdToSpans[$span->transactionId] = [];
-            }
-            $transactionIdToSpans[$span->transactionId][$spanId] = $span;
-        }
-
-        return $transactionIdToSpans;
-    }
-
-    /**
-     * @param array<string, TransactionData> $idToTransaction
-     *
-     * @return TransactionData
-     */
-    public static function findRootTransaction(array $idToTransaction): TransactionData
-    {
-        /** @var TransactionData|null */
-        $rootTransaction = null;
-        foreach ($idToTransaction as $transaction) {
-            if (is_null($transaction->parentId)) {
-                self::assertNull($rootTransaction, 'Found more than one root transaction');
-                $rootTransaction = $transaction;
-            }
-        }
-        self::assertNotNull(
-            $rootTransaction,
-            'Root transaction not found. ' . LoggableToString::convert(['idToTransaction' => $idToTransaction])
-        );
-        return $rootTransaction;
-    }
-
-    /**
-     * @param array<string, TransactionData> $idToTransaction
-     * @param array<string, SpanData>        $idToSpan
-     */
-    private static function assertTransactionsGraphIsTree(array $idToTransaction, array $idToSpan): void
-    {
-        $rootTransaction = self::findRootTransaction($idToTransaction);
-        /** @var array<string, string> */
-        $transactionIdToParentId = [];
-        foreach ($idToTransaction as $transactionId => $transaction) {
-            if (is_null($transaction->parentId)) {
-                continue;
-            }
-            $parentSpan = ArrayUtil::getValueIfKeyExistsElse($transaction->parentId, $idToSpan, null);
-            if (is_null($parentSpan)) {
-                self::assertArrayHasKey($transaction->parentId, $idToTransaction);
-                $transactionIdToParentId[$transactionId] = $transaction->parentId;
-            } else {
-                $transactionIdToParentId[$transactionId] = $parentSpan->transactionId;
-            }
-        }
-        self::assertNotNull($rootTransaction);
-        self::assertGraphIsTree($rootTransaction->id, $transactionIdToParentId);
-    }
-
-    /**
-     * @param array<string, TransactionData> $idToTransaction
-     * @param array<string, SpanData>        $idToSpan
-     * @param bool                           $forceEnableFlakyAssertions
-     */
-    public static function assertValidTransactionsAndSpans(
-        array $idToTransaction,
-        array $idToSpan,
-        bool $forceEnableFlakyAssertions = false
-    ): void {
-        self::assertTransactionsGraphIsTree($idToTransaction, $idToSpan);
-
-        $rootTransaction = self::findRootTransaction($idToTransaction);
-
-        // Assert that all transactions have the same traceId
-        foreach ($idToTransaction as $transaction) {
-            self::assertSame($rootTransaction->traceId, $transaction->traceId);
-        }
-
-        // Assert that each transaction did not start before its parent
-        foreach ($idToTransaction as $transaction) {
-            if (is_null($transaction->parentId)) {
-                continue;
-            }
-            /** @var ExecutionSegmentData|null $parentExecSegment */
-            $parentExecSegment = ArrayUtil::getValueIfKeyExistsElse($transaction->parentId, $idToSpan, null);
-            if (is_null($parentExecSegment)) {
-                self::assertTrue(
-                    ArrayUtil::getValueIfKeyExists(
-                        $transaction->parentId,
-                        $idToTransaction,
-                        /* ref */ $parentExecSegment
-                    )
-                );
-            }
-            self::assertNotNull($parentExecSegment);
-            self::assertLessThanOrEqualTimestamp($parentExecSegment->timestamp, $transaction->timestamp);
-        }
-
-        // Assert that all spans have the same traceId
-        foreach ($idToSpan as $span) {
-            self::assertSame($rootTransaction->traceId, $span->traceId);
-        }
-
-        // Assert that every span's transactionId is present
-        /** @var SpanData $span */
-        foreach ($idToSpan as $span) {
-            self::assertArrayHasKey($span->transactionId, $idToTransaction);
-        }
-
-        // Group spans by transaction and verify every group
-        foreach ($idToTransaction as $transactionId => $transaction) {
-            $idToSpanOnlyCurrentTransaction = [];
-            foreach ($idToSpan as $spanId => $span) {
-                if ($span->transactionId === $transactionId) {
-                    $idToSpanOnlyCurrentTransaction[$spanId] = $span;
-                }
-            }
-            self::assertValidTransactionAndItsSpans(
-                $transaction,
-                $idToSpanOnlyCurrentTransaction,
-                $forceEnableFlakyAssertions
-            );
-        }
-    }
-
-    public static function assertTransactionEquals(TransactionData $expected, TransactionData $actual): void
+    public static function assertTransactionEquals(TransactionDto $expected, TransactionDto $actual): void
     {
         self::assertEquals($expected, $actual);
     }
 
-    public static function assertSpanEquals(SpanData $expected, SpanData $actual): void
+    public static function assertSpanEquals(SpanDto $expected, SpanDto $actual): void
     {
         self::assertEquals($expected, $actual);
     }
@@ -434,41 +169,41 @@ class TestCaseBase extends TestCase
         }
     }
 
-    public static function getExecutionSegmentContext(ExecutionSegmentData $execSegData): ?ExecutionSegmentContextData
+    public static function getExecutionSegmentContext(ExecutionSegmentDto $execSegData): ?ExecutionSegmentContextDto
     {
-        if ($execSegData instanceof SpanData) {
+        if ($execSegData instanceof SpanDto) {
             return $execSegData->context;
         }
 
-        TestCase::assertInstanceOf(TransactionData::class, $execSegData, DbgUtil::getType($execSegData));
+        self::assertInstanceOf(TransactionDto::class, $execSegData, DbgUtil::getType($execSegData));
         return $execSegData->context;
     }
 
     /**
-     * @param ExecutionSegmentData $execSegData
+     * @param ExecutionSegmentDto $execSegData
      * @param string               $key
      *
      * @return bool
      */
-    public static function hasLabel(ExecutionSegmentData $execSegData, string $key): bool
+    public static function hasLabel(ExecutionSegmentDto $execSegData, string $key): bool
     {
         $context = self::getExecutionSegmentContext($execSegData);
-        if (is_null($context)) {
+        if ($context === null) {
             return false;
         }
-        return array_key_exists($key, $context->labels);
+        return $context->labels !== null && array_key_exists($key, $context->labels);
     }
 
     /**
      * @param int                  $expectedCount
-     * @param ExecutionSegmentData $execSegData
+     * @param ExecutionSegmentDto $execSegData
      *
      * @return void
      */
-    public static function assertLabelsCount(int $expectedCount, ExecutionSegmentData $execSegData): void
+    public static function assertLabelsCount(int $expectedCount, ExecutionSegmentDto $execSegData): void
     {
         $context = self::getExecutionSegmentContext($execSegData);
-        if (is_null($context)) {
+        if ($context === null || $context->labels === null) {
             self::assertSame(0, $expectedCount, LoggableToString::convert($execSegData));
             return;
         }
@@ -476,62 +211,111 @@ class TestCaseBase extends TestCase
     }
 
     /**
-     * @param ExecutionSegmentData $execSegData
+     * @param ExecutionSegmentDto $execSegData
      *
      * @return array<string, string|bool|int|float|null>
      */
-    public static function getLabels(ExecutionSegmentData $execSegData): array
+    public static function getLabels(ExecutionSegmentDto $execSegData): array
     {
         $context = self::getExecutionSegmentContext($execSegData);
-        if (is_null($context)) {
+        if ($context === null || $context->labels === null) {
             return [];
         }
         return $context->labels;
     }
 
     /**
-     * @param ExecutionSegmentData $execSegData
+     * @param ExecutionSegmentDto $execSegData
      * @param string               $key
      *
      * @return string|bool|int|float|null
      */
-    public static function getLabel(ExecutionSegmentData $execSegData, string $key)
+    public static function getLabel(ExecutionSegmentDto $execSegData, string $key)
     {
         $context = self::getExecutionSegmentContext($execSegData);
         self::assertNotNull($context);
+        self::assertNotNull($context->labels);
         self::assertArrayHasKey($key, $context->labels);
         return $context->labels[$key];
     }
 
-    public static function assertHasLabel(ExecutionSegmentData $execSegData, string $key, string $message = ''): void
+    public static function assertHasLabel(ExecutionSegmentDto $execSegData, string $key, string $message = ''): void
     {
         $context = self::getExecutionSegmentContext($execSegData);
-        self::assertNotNull($context, LoggableToString::convert(['execSegData' => $execSegData]) . '. ' . $message);
-        self::assertArrayHasKey(
-            $key,
-            $context->labels,
-            LoggableToString::convert(['key' => $key, 'execSegData' => $execSegData]) . '. ' . $message
-        );
+        $dbgCtx = ['key' => $key, 'execSegData' => $execSegData, 'message' => $message];
+        $dbgCtxStr = LoggableToString::convert($dbgCtx);
+        self::assertNotNull($context, $dbgCtxStr);
+        self::assertNotNull($context->labels, $dbgCtxStr);
+        self::assertArrayHasKey($key, $context->labels, $dbgCtxStr);
     }
 
-    public static function assertNotHasLabel(ExecutionSegmentData $execSegData, string $key): void
+    public static function assertNotHasLabel(ExecutionSegmentDto $execSegData, string $key): void
     {
         $context = self::getExecutionSegmentContext($execSegData);
-        if (is_null($context)) {
+        if ($context === null || $context->labels === null) {
             return;
         }
         self::assertArrayNotHasKey($key, $context->labels);
     }
 
     /**
+     * @param array<mixed, mixed> $actual
+     */
+    public static function assertArrayIsList(array $actual): void
+    {
+        TestCase::assertTrue(ArrayUtil::isList($actual), LoggableToString::convert(['$actual' => $actual]));
+    }
+
+    /**
+     * @param mixed[]              $expected
+     * @param mixed[]              $actual
+     * @param array<string, mixed> $dbgCtxOuter
+     */
+    public static function assertEqualLists(array $expected, array $actual, array $dbgCtxOuter = []): void
+    {
+        $dbgCtxTop = array_merge(['expected' => $expected, 'actual' => $actual], $dbgCtxOuter);
+        self::assertSame(count($expected), count($actual), LoggableToString::convert($dbgCtxTop));
+        foreach (RangeUtil::generateUpTo(count($expected)) as $i) {
+            $dbgCtxPerIndex = array_merge(['i' => $i], $dbgCtxTop);
+            self::assertSame($expected[$i], $actual[$i], LoggableToString::convert($dbgCtxPerIndex));
+        }
+    }
+
+    /**
      * @param mixed[] $expected
      * @param mixed[] $actual
      */
-    public static function assertEqualLists(array $expected, array $actual): void
+    public static function assertEqualAsSets(array $expected, array $actual, string $message = ''): void
     {
         self::assertTrue(sort(/* ref */ $expected));
         self::assertTrue(sort(/* ref */ $actual));
-        self::assertEqualsCanonicalizing($expected, $actual);
+        self::assertEqualsCanonicalizing($expected, $actual, $message);
+    }
+
+    /**
+     * @param array<mixed, mixed> $subsetMap
+     * @param array<mixed, mixed> $containingMap
+     */
+    public static function assertMapIsSubsetOf(array $subsetMap, array $containingMap, string $message = ''): void
+    {
+        $ctx = $message === ''
+            ? LoggableToString::convert(['subsetMap' => $subsetMap, 'containingMap' => $containingMap])
+            : $message;
+        self::assertGreaterThanOrEqual(count($subsetMap), count($containingMap), $ctx);
+        foreach ($subsetMap as $subsetMapKey => $subsetMapVal) {
+            self::assertArrayHasKey($subsetMapKey, $containingMap, $ctx);
+            self::assertEquals($subsetMapVal, $containingMap[$subsetMapKey], $ctx);
+        }
+    }
+
+    /**
+     * @param array<mixed, mixed> $expected
+     * @param array<mixed, mixed> $actual
+     */
+    public static function assertEqualMaps(array $expected, array $actual, string $message = ''): void
+    {
+        self::assertMapIsSubsetOf($expected, $actual, $message);
+        self::assertMapIsSubsetOf($actual, $expected, $message);
     }
 
     /**
@@ -541,7 +325,7 @@ class TestCaseBase extends TestCase
      */
     public static function getIdsFromIdToMap(array $idToXyzMap): array
     {
-        /** @var string[] */
+        /** @var string[] $result */
         $result = [];
         foreach ($idToXyzMap as $id => $_) {
             $result[] = strval($id);
@@ -552,13 +336,14 @@ class TestCaseBase extends TestCase
     public static function buildTracerForTests(?EventSinkInterface $eventSink = null): TracerBuilderForTests
     {
         return TracerBuilderForTests::startNew()
+                                    ->withClock(AmbientContextForTests::clock())
                                     ->withLogSink(NoopLogSink::singletonInstance())
                                     ->withEventSink($eventSink ?? NoopEventSink::singletonInstance());
     }
 
     public static function noopLoggerFactory(): LoggerFactory
     {
-        if (!isset(self::$noopLoggerFactory)) {
+        if (self::$noopLoggerFactory === null) {
             self::$noopLoggerFactory = new LoggerFactory(
                 new LogBackend(LogLevel::OFF, NoopLogSink::singletonInstance())
             );
@@ -566,26 +351,28 @@ class TestCaseBase extends TestCase
         return self::$noopLoggerFactory;
     }
 
-    public static function getParentId(ExecutionSegmentData $execSegData): ?string
+    public static function getParentId(ExecutionSegmentDto $execSegData): ?string
     {
-        if ($execSegData instanceof SpanData) {
+        if ($execSegData instanceof SpanDto) {
             return $execSegData->parentId;
         }
 
-        TestCase::assertInstanceOf(TransactionData::class, $execSegData, DbgUtil::getType($execSegData));
+        self::assertInstanceOf(TransactionDto::class, $execSegData, DbgUtil::getType($execSegData));
         return $execSegData->parentId;
     }
 
-    public static function setParentId(ExecutionSegmentData $execSegData, ?string $newParentId): void
+    /** @noinspection PhpIfWithCommonPartsInspection */
+    public static function setParentId(ExecutionSegmentDto $execSegData, ?string $newParentId): void
     {
-        if ($execSegData instanceof SpanData) {
+        if ($execSegData instanceof SpanDto) {
             self::assertNotNull($newParentId);
             $execSegData->parentId = $newParentId;
-            return;
+        } else {
+            self::assertInstanceOf(TransactionDto::class, $execSegData, DbgUtil::getType($execSegData));
+            $execSegData->parentId = $newParentId;
         }
 
-        TestCase::assertInstanceOf(TransactionData::class, $execSegData, DbgUtil::getType($execSegData));
-        $execSegData->parentId = $newParentId;
+        self::assertSame($newParentId, self::getParentId($execSegData));
     }
 
     public static function generateDummyMaxKeywordString(string $prefix = ''): string
@@ -602,7 +389,7 @@ class TestCaseBase extends TestCase
     }
 
     /**
-     * @return iterable<array<bool>>
+     * @return iterable<array{bool}>
      */
     public function boolDataProvider(): iterable
     {
@@ -610,40 +397,262 @@ class TestCaseBase extends TestCase
         yield [false];
     }
 
-    private static function processSpecificPrefix(): string
+    /**
+     * @param string       $namespace
+     * @param class-string $fqClassName
+     * @param string       $srcCodeFile
+     *
+     * @return Logger
+     */
+    protected function getLogger(string $namespace, string $fqClassName, string $srcCodeFile): Logger
     {
-        return self::$isUnitTest ? '' : AmbientContext::dbgProcessName() . ' [PID: ' . getmypid() . '] ';
+        if ($this->logger === null) {
+            $this->logger = AmbientContextForTests::loggerFactory()->loggerForClass(
+                LogCategoryForTests::TEST,
+                $namespace,
+                $fqClassName,
+                $srcCodeFile
+            )->addContext('this', $this);
+        }
+        self::assertNotNull($this->logger);
+
+        return $this->logger;
     }
 
-    public static function printMessage(string $srcMethod, string $msg): void
+    /**
+     * @param string       $namespace
+     * @param class-string $fqClassName
+     * @param string       $srcCodeFile
+     *
+     * @return Logger
+     */
+    public static function getLoggerStatic(string $namespace, string $fqClassName, string $srcCodeFile): Logger
     {
-        if (!defined('STDERR')) {
-            define('STDERR', fopen('php://stderr', 'w'));
-        }
-
-        if (defined('STDERR')) {
-            fwrite(STDERR, self::processSpecificPrefix() . '[' . $srcMethod . ']' . ' ' . $msg . PHP_EOL);
-        }
+        return AmbientContextForTests::loggerFactory()->loggerForClass(
+            LogCategoryForTests::TEST,
+            $namespace,
+            $fqClassName,
+            $srcCodeFile
+        );
     }
 
-    public static function logAndPrintMessage(
-        ?EnabledLoggerProxy $loggerProxy,
-        string $msg
-    ): void {
-        if (!defined('STDERR')) {
-            define('STDERR', fopen('php://stderr', 'w'));
-        }
-        if (defined('STDERR')) {
-            fwrite(STDERR, self::processSpecificPrefix() . $msg . PHP_EOL);
-        }
-
-        if ($loggerProxy !== null) {
-            $loggerProxy->log($msg);
-        }
-    }
-
-    protected static function dummyAssert(): void
+    public static function dummyAssert(): void
     {
         self::assertTrue(true);
+    }
+
+    /**
+     * @param mixed  $expected
+     * @param mixed  $actual
+     * @param string $message
+     */
+    public static function assertSameNullness($expected, $actual, string $message = ''): void
+    {
+        TestCase::assertThat(
+            $actual,
+            ($expected === null) ? TestCase::isNull() : TestCase::logicalNot(TestCase::isNull()),
+            LoggableToString::convert(
+                [
+                    '$expected' => $expected,
+                    '$actual' => $actual,
+                    $message
+                ]
+            )
+        );
+    }
+
+    /**
+     * @param mixed  $actual
+     * @param string $message
+     *
+     * @psalm-assert int|float $actual
+     */
+    public static function assertIsNumber($actual, string $message = ''): void
+    {
+        TestCase::assertThat(
+            $actual,
+            TestCase::logicalOr(new IsType(IsType::TYPE_INT), new IsType(IsType::TYPE_FLOAT)),
+            $message
+        );
+    }
+
+    public static function assertGreaterThanZero(int $actual, string $message = ''): void
+    {
+        TestCase::assertGreaterThan(0, $actual, $message);
+    }
+
+    /**
+     * @param int|float $rangeBegin
+     * @param int|float $actual
+     * @param int|float $rangeEnd
+     * @param string    $message
+     */
+    public static function assertInClosedRange($rangeBegin, $actual, $rangeEnd, string $message = ''): void
+    {
+        TestCase::assertThat(
+            $actual,
+            TestCase::logicalAnd(
+                TestCase::logicalOr(new IsEqual($rangeBegin), new GreaterThan($rangeBegin)),
+                TestCase::logicalOr(new IsEqual($rangeEnd), new LessThan($rangeEnd))
+            ),
+            $message
+        );
+    }
+
+    public static function assertLessThanOrEqualTimestamp(float $before, float $after): void
+    {
+        TestCase::assertThat(
+            $before,
+            TestCase::logicalOr(
+                new IsEqual($after, /* delta: */ self::TIMESTAMP_COMPARISON_PRECISION_MICROSECONDS),
+                new LessThan($after)
+            ),
+            LoggableToString::convert(
+                [
+                    'before as duration' => TimeUtil::formatDurationInMicroseconds($before),
+                    'after as duration'  => TimeUtil::formatDurationInMicroseconds($after),
+                    'after - before'     => TimeUtil::formatDurationInMicroseconds($after - $before),
+                    'before as number'   => number_format($before),
+                    'after as number'    => number_format($after),
+                ]
+            )
+        );
+    }
+
+    public static function assertTimestampInRange(
+        float $pastTimestamp,
+        float $timestamp,
+        float $futureTimestamp
+    ): void {
+        TestCaseBase::assertLessThanOrEqualTimestamp($pastTimestamp, $timestamp);
+        TestCaseBase::assertLessThanOrEqualTimestamp($timestamp, $futureTimestamp);
+    }
+
+    public static function calcEndTime(ExecutionSegmentDto $timedData): float
+    {
+        return $timedData->timestamp + TimeUtil::millisecondsToMicroseconds($timedData->duration);
+    }
+
+    /**
+     * @param TransactionDto         $transaction
+     * @param array<string, SpanDto> $idToSpan
+     * @param bool                    $forceEnableFlakyAssertions
+     */
+    protected static function assertValidTransactionAndSpans(
+        TransactionDto $transaction,
+        array $idToSpan,
+        bool $forceEnableFlakyAssertions = false
+    ): void {
+        TraceValidator::validate(
+            new TraceActual([$transaction->id => $transaction], $idToSpan),
+            null /* <- expected */,
+            $forceEnableFlakyAssertions
+        );
+    }
+
+    /**
+     * @template T
+     *
+     * @param Optional<T> $expected
+     * @param T           $actual
+     */
+    public static function assertSameExpectedOptional(Optional $expected, $actual): void
+    {
+        if ($expected->isValueSet()) {
+            self::assertSame($expected->getValue(), $actual);
+        }
+    }
+
+    /**
+     * @param string|int           $expectedKey
+     * @param mixed                $expectedVal
+     * @param array<string, mixed> $actualArray
+     */
+    public static function assertSameValueInArray(
+        $expectedKey,
+        $expectedVal,
+        array $actualArray,
+        string $message = ''
+    ): void {
+        $ctx = (!empty($message)) ? $message : LoggableToString::convert(
+            [
+                'expectedKey' => $expectedKey,
+                'expectedVal' => $expectedVal,
+                'actualArray' => $actualArray,
+            ]
+        );
+        self::assertArrayHasKey($expectedKey, $actualArray, $ctx);
+        self::assertSame($expectedVal, $actualArray[$expectedKey], $ctx);
+    }
+
+    /**
+     * @param string               $expectedKey
+     * @param mixed                $expectedVal
+     * @param array<string, mixed> $actualArray
+     */
+    public static function assertEqualValueInArray(string $expectedKey, $expectedVal, array $actualArray): void
+    {
+        self::assertArrayHasKey($expectedKey, $actualArray);
+        self::assertEquals($expectedVal, $actualArray[$expectedKey]);
+    }
+
+    /**
+     * @template T
+     *
+     * @param T $rangeBegin
+     * @param T $val
+     * @param T $rangeInclusiveEnd
+     *
+     * @return void
+     */
+    public static function assertInRangeInclusive($rangeBegin, $val, $rangeInclusiveEnd): void
+    {
+        self::assertGreaterThanOrEqual($rangeBegin, $val);
+        self::assertLessThanOrEqual($rangeInclusiveEnd, $val);
+    }
+
+    /**
+     * @param string $optName
+     * @param mixed  $val
+     *
+     * @return bool
+     */
+    public static function equalsConfigDefaultValue(string $optName, $val): bool
+    {
+        $optMeta = AllOptionsMetadata::get()[$optName];
+        if (!$optMeta instanceof OptionWithDefaultValueMetadata) {
+            return false;
+        }
+        return $val == $optMeta->defaultValue();
+    }
+
+    /**
+     * @param string|int          $key
+     * @param mixed               $expectedValue
+     * @param array<mixed, mixed> $array
+     * @param string              $message
+     *
+     * @return void
+     */
+    public static function assertArrayHasKeyWithValue($key, $expectedValue, array $array, string $message = ''): void
+    {
+        self::assertArrayHasKey($key, $array, $message);
+        self::assertSame($expectedValue, $array[$key], $message);
+    }
+
+    /**
+     * @return void
+     */
+    public function setUp(): void
+    {
+        parent::setUp();
+    }
+
+    /**
+     * @return void
+     */
+    public function tearDown(): void
+    {
+        parent::tearDown();
     }
 }

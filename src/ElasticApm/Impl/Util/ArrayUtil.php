@@ -54,9 +54,9 @@ final class ArrayUtil
     }
 
     /**
-     * @param string|int    $key
-     * @param array<mixed>  $array
-     * @param mixed         $fallbackValue
+     * @param string|int               $key
+     * @param array<string|int, mixed> $array
+     * @param mixed                    $fallbackValue
      *
      * @return mixed
      *
@@ -67,30 +67,163 @@ final class ArrayUtil
      */
     public static function getValueIfKeyExistsElse($key, array $array, $fallbackValue)
     {
+        return array_key_exists($key, $array) ? $array[$key] : $fallbackValue;
+    }
+
+    /**
+     * @param string|int               $key
+     * @param array<string|int, mixed> $array
+     * @param string                   $fallbackValue
+     *
+     * @return string
+     */
+    public static function getStringValueIfKeyExistsElse($key, array $array, string $fallbackValue): string
+    {
         if (!array_key_exists($key, $array)) {
             return $fallbackValue;
         }
 
-        return $array[$key];
+        $value = $array[$key];
+
+        if (!is_string($value)) {
+            return $fallbackValue;
+        }
+
+        return $value;
     }
 
     /**
-     * @param string        $key
-     * @param mixed         $defaultValue
-     * @param array<mixed>  $array
-     * @return mixed
+     * @param string|int               $key
+     * @param array<string|int, mixed> $array
+     * @param ?string                  $fallbackValue
      *
-     * @template        T
-     * @phpstan-param   T   $defaultValue
-     * @phpstan-param   T[] $array
-     * @phpstan-return  T
+     * @return ?string
      */
-    public static function &getOrAdd(string $key, $defaultValue, array $array)
+    public static function getNullableStringValueIfKeyExistsElse($key, array $array, ?string $fallbackValue): ?string
+    {
+        if (!array_key_exists($key, $array)) {
+            return $fallbackValue;
+        }
+
+        $value = $array[$key];
+
+        if (!is_string($value)) {
+            return $fallbackValue;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param string|int               $key
+     * @param array<string|int, mixed> $array
+     * @param int                      $fallbackValue
+     *
+     * @return int
+     */
+    public static function getIntValueIfKeyExistsElse($key, array $array, int $fallbackValue): int
+    {
+        if (!array_key_exists($key, $array)) {
+            return $fallbackValue;
+        }
+
+        $value = $array[$key];
+
+        if (!is_int($value)) {
+            return $fallbackValue;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param string|int               $key
+     * @param array<string|int, mixed> $array
+     * @param ?int                     $fallbackValue
+     *
+     * @return ?int
+     */
+    public static function getNullableIntValueIfKeyExistsElse($key, array $array, ?int $fallbackValue): ?int
+    {
+        if (!array_key_exists($key, $array)) {
+            return $fallbackValue;
+        }
+
+        $value = $array[$key];
+
+        if (!is_int($value)) {
+            return $fallbackValue;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @template TKey of string|int
+     * @template TValue
+     *
+     * @param TKey                $key
+     * @param TValue              $defaultValue
+     * @param array<TKey, TValue> $array
+     *
+     * @return TValue
+     */
+    public static function &getOrAdd($key, $defaultValue, array &$array)
     {
         if (!array_key_exists($key, $array)) {
             $array[$key] = $defaultValue;
         }
 
         return $array[$key];
+    }
+
+    /**
+     * @param array<mixed, mixed> $array
+     *
+     * @return bool
+     */
+    public static function isEmpty(array $array): bool
+    {
+        return count($array) === 0;
+    }
+
+    /**
+     * @param array<mixed, mixed> $array
+     *
+     * @return bool
+     */
+    public static function isList(array $array): bool
+    {
+        $expectedKey = 0;
+        foreach ($array as $key => $_) {
+            if ($key !== $expectedKey) {
+                return false;
+            }
+            ++$expectedKey;
+        }
+        return true;
+    }
+
+    /**
+     * @param array<string, mixed> $srcArray
+     * @param string               $key
+     * @param array<string, mixed> $dstArray
+     */
+    public static function copyByArrayKeyIfExists(array $srcArray, string $key, array &$dstArray): void
+    {
+        if (array_key_exists($key, $srcArray)) {
+            $dstArray[$key] = $srcArray[$key];
+        }
+    }
+
+    /**
+     * @param string               $key
+     * @param array<string, mixed> $array
+     */
+    public static function removeKeyIfExists(string $key, array &$array): void
+    {
+        if (array_key_exists($key, $array)) {
+            unset($array[$key]);
+        }
     }
 }

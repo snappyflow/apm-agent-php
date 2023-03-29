@@ -28,36 +28,40 @@ namespace Elastic\Apm\Impl\Log;
  *
  * @internal
  */
-final class Logger
+final class Logger implements LoggableInterface
 {
+    use LoggableTrait;
+
     /** @var LoggerData */
     private $data;
 
-    /** @var int */
-    private $maxEnabledLevel;
-
-    private function __construct(LoggerData $data, int $maxEnabledLevel)
+    private function __construct(LoggerData $data)
     {
         $this->data = $data;
-        $this->maxEnabledLevel = $maxEnabledLevel;
     }
 
+    /**
+     * @param string       $category
+     * @param string       $namespace
+     * @param class-string $fqClassName
+     * @param string       $srcCodeFile
+     * @param Backend      $backend
+     *
+     * @return static
+     */
     public static function makeRoot(
         string $category,
         string $namespace,
-        string $className,
+        string $fqClassName,
         string $srcCodeFile,
         Backend $backend
     ): self {
-        return new self(
-            LoggerData::makeRoot($category, $namespace, $className, $srcCodeFile, $backend),
-            $backend->maxEnabledLevel()
-        );
+        return new self(LoggerData::makeRoot($category, $namespace, $fqClassName, $srcCodeFile, $backend));
     }
 
     public function inherit(): self
     {
-        return new self(LoggerData::inherit($this->data), $this->maxEnabledLevel);
+        return new self($this->data->inherit());
     }
 
     /**
@@ -115,10 +119,22 @@ final class Logger
         return $this->ifLevelEnabled(Level::TRACE, $srcCodeLine, $srcCodeFunc);
     }
 
+    public function ifTraceLevelEnabledNoLine(string $srcCodeFunc): ?EnabledLoggerProxyNoLine
+    {
+        return $this->ifLevelEnabledNoLine(Level::TRACE, $srcCodeFunc);
+    }
+
     public function ifLevelEnabled(int $statementLevel, int $srcCodeLine, string $srcCodeFunc): ?EnabledLoggerProxy
     {
-        return ($this->maxEnabledLevel >= $statementLevel)
+        return ($this->data->backend->isEnabledForLevel($statementLevel))
             ? new EnabledLoggerProxy($statementLevel, $srcCodeLine, $srcCodeFunc, $this->data)
+            : null;
+    }
+
+    public function ifLevelEnabledNoLine(int $statementLevel, string $srcCodeFunc): ?EnabledLoggerProxyNoLine
+    {
+        return ($this->data->backend->isEnabledForLevel($statementLevel))
+            ? new EnabledLoggerProxyNoLine($statementLevel, $srcCodeFunc, $this->data)
             : null;
     }
 
@@ -129,9 +145,9 @@ final class Logger
      */
     public function possiblySecuritySensitive($value)
     {
-        if ($this->maxEnabledLevel >= Level::TRACE) {
+        if ($this->data->backend->isEnabledForLevel(Level::TRACE)) {
             return $value;
         }
-        return 'HIDDEN POSSIBLY SECURITY SENSITIVE DATA';
+        return 'REDUCTED (POSSIBLY SECURITY SENSITIVE) DATA';
     }
 }

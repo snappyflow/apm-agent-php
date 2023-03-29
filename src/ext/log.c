@@ -34,6 +34,11 @@
 
 #define ELASTIC_APM_CURRENT_LOG_CATEGORY ELASTIC_APM_LOG_CATEGORY_LOG
 
+#ifndef PHP_WIN32
+LogLevel g_elasticApmDirectLogLevelSyslog = logLevel_off;
+#endif // #ifndef PHP_WIN32
+LogLevel g_elasticApmDirectLogLevelStderr = logLevel_off;
+
 String logLevelNames[numberOfLogLevels] =
         {
                 [logLevel_off] = "OFF", [logLevel_critical] = "CRITICAL", [logLevel_error] = "ERROR", [logLevel_warning] = "WARNING", [logLevel_info] = "INFO", [logLevel_debug] = "DEBUG", [logLevel_trace] = "TRACE"
@@ -216,34 +221,6 @@ StringView buildCommonPrefix(
     return textOutputStreamContentAsStringView( &txtOutStream );
 }
 
-static
-StringView findEndOfLineSequence( StringView text )
-{
-    // The order in endOfLineSequences is important because we need to check longer sequences first
-    StringView endOfLineSequences[] =
-            {
-                    ELASTIC_APM_STRING_LITERAL_TO_VIEW( "\r\n" )
-                    , ELASTIC_APM_STRING_LITERAL_TO_VIEW( "\n" )
-                    , ELASTIC_APM_STRING_LITERAL_TO_VIEW( "\r" )
-            };
-
-    ELASTIC_APM_FOR_EACH_INDEX( textPos, text.length )
-    {
-        ELASTIC_APM_FOR_EACH_INDEX( eolSeqIndex, ELASTIC_APM_STATIC_ARRAY_SIZE( endOfLineSequences ) )
-        {
-            if ( text.length - textPos < endOfLineSequences[ eolSeqIndex ].length ) continue;
-
-            StringView eolSeqCandidate = makeStringView( &( text.begin[ textPos ] ), endOfLineSequences[ eolSeqIndex ].length );
-            if ( areStringViewsEqual( eolSeqCandidate, endOfLineSequences[ eolSeqIndex ] ) )
-            {
-                return eolSeqCandidate;
-            }
-        }
-    }
-
-    return makeEmptyStringView();
-}
-
 StringView insertPrefixAtEachNewLine(
         Logger* logger
         , StringView sinkSpecificPrefix
@@ -272,9 +249,13 @@ StringView insertPrefixAtEachNewLine(
         if ( isEmptyStringView( eolSeq ) ) break;
 
         streamStringView( makeStringViewFromBeginEnd( oldMessageLeft.begin, stringViewEnd( eolSeq ) ), &txtOutStream );
-        streamStringView( sinkSpecificPrefix, &txtOutStream );
+        if ( sinkSpecificPrefix.length != 0 )
+        {
+            streamStringView( sinkSpecificPrefix, &txtOutStream );
+            appendSeparator( &txtOutStream );
+        }
         streamStringView( commonPrefix, &txtOutStream );
-        streamIndent( /* nestingDepth */ 1, &txtOutStream );
+        appendSeparator( &txtOutStream );
         oldMessageLeft = makeStringViewFromBeginEnd( stringViewEnd( eolSeq ), oldMessageEnd );
     }
 
@@ -335,7 +316,7 @@ void writeToStderr( Logger* logger, LogLevel statementLevel, StringView commonPr
 {
     String fullText = concatPrefixAndMsg(
             logger
-            , /* sinkSpecificPrefix: */ ELASTIC_APM_STRING_LITERAL_TO_VIEW( "" )
+            , /* sinkSpecificPrefix: */ ELASTIC_APM_STRING_LITERAL_TO_VIEW( ELASTIC_APM_LOG_LINE_PREFIX_TRACER_PART )
             , /* sinkSpecificEndOfLine: */ ELASTIC_APM_STRING_LITERAL_TO_VIEW( "\n" )
             , commonPrefix
             , /* prefixNewLines: */ true
@@ -476,14 +457,15 @@ static void openAndAppendToFile( Logger* logger, String text )
     goto finally;
 }
 
-static bool isToLogToFileInGoodState( Logger* logger )
+static
+bool isLogFileInGoodState( Logger* logger )
 {
     return ( ! isNullOrEmtpyString( logger->config.file ) ) && ( ! logger->fileFailed );
 }
 
 void writeToFile( Logger* logger, StringView commonPrefix, String msgFmt, va_list msgArgs )
 {
-    ELASTIC_APM_ASSERT( isToLogToFileInGoodState( logger ), "" );
+    ELASTIC_APM_ASSERT( isLogFileInGoodState( logger ), "" );
 
     String fullText = concatPrefixAndMsg(
             logger
@@ -604,7 +586,7 @@ void vLogWithLoggerImpl(
     }
             #endif
 
-    if ( ( isForced || logger->config.levelPerSinkType[ logSink_file ] >= statementLevel ) && isToLogToFileInGoodState( logger ) )
+    if ( ( isForced || logger->config.levelPerSinkType[ logSink_file ] >= statementLevel ) && isLogFileInGoodState( logger ) )
     {
         // create a separate copy of va_list because functions using it (such as fprintf, etc.) modify it
         va_list msgPrintfFmtArgsCopy;
@@ -625,6 +607,7 @@ void vLogWithLoggerImpl(
 }
 
 
+static String g_logMutexDesc = "global logger";
 static Mutex* g_logMutex = NULL;
 static __thread bool g_isInLogContext = false;
 
@@ -648,7 +631,8 @@ void vLogWithLogger(
     if ( g_logMutex == NULL )
     {
         #ifndef PHP_WIN32
-        syslog( LOG_CRIT, "g_logMutex is NULL" );
+        ELASTIC_APM_LOG_DIRECT_CRITICAL( "g_logMutex is NULL; filePath: %.*s, lineNumber: %d, funcName: %.*s, msgPrintfFmt: %s"
+                                         , (int)filePath.length, filePath.begin, lineNumber, (int)funcName.length, funcName.begin, msgPrintfFmt );
         #endif
         return;
     }
@@ -656,7 +640,8 @@ void vLogWithLogger(
     if ( g_isInLogContext )
     {
         #ifndef PHP_WIN32
-        syslog( LOG_CRIT, "Trying to re-enter logging" );
+        ELASTIC_APM_LOG_DIRECT_CRITICAL( "Trying to re-enter logging; filePath: %.*s, lineNumber: %d, funcName: %.*s, msgPrintfFmt: %s"
+                                         , (int)filePath.length, filePath.begin, lineNumber, (int)funcName.length, funcName.begin, msgPrintfFmt );
         #endif
         return;
     }
@@ -664,8 +649,12 @@ void vLogWithLogger(
     g_isInLogContext = true;
 
     bool shouldUnlockMutex = false;
-    if ( lockMutex( g_logMutex, &shouldUnlockMutex, __FUNCTION__ ) != resultSuccess )
+    // Don't log for logging mutex to avoid spamming the log
+    ResultCode resultCode = lockMutexNoLogging( g_logMutex, &shouldUnlockMutex, __FUNCTION__ );
+    if ( resultCode != resultSuccess )
     {
+        ELASTIC_APM_LOG_DIRECT_CRITICAL( "Failed to lock g_logMutex, resultCode: %s (%d); filePath: %.*s, lineNumber: %d, funcName: %.*s, msgPrintfFmt: %s"
+                                         , resultCodeToString( resultCode ), resultCode, (int)filePath.length, filePath.begin, lineNumber, (int)funcName.length, funcName.begin, msgPrintfFmt );
         goto finally;
     }
 
@@ -680,7 +669,8 @@ void vLogWithLogger(
                         , msgPrintfFmtArgs );
 
     finally:
-    unlockMutex( g_logMutex, &shouldUnlockMutex, __FUNCTION__ );
+    // Don't log for logging mutex to avoid spamming the log
+    unlockMutexNoLogging( g_logMutex, &shouldUnlockMutex, __FUNCTION__ );
     g_isInLogContext = false;
 }
 
@@ -780,7 +770,10 @@ LogLevel defaultLogLevelPerSinkType[numberOfLogSinkTypes] =
         };
 
 static void logConfigChange(
-        const LoggerConfig* oldConfig, LogLevel oldMaxEnabledLevel, const LoggerConfig* newConfig, LogLevel newMaxEnabledLevel
+    const LoggerConfig* oldConfig,
+    LogLevel oldMaxEnabledLevel,
+    const LoggerConfig* newConfig,
+    LogLevel newMaxEnabledLevel
 )
 {
     char txtOutStreamBuf[ELASTIC_APM_TEXT_OUTPUT_STREAM_ON_STACK_BUFFER_SIZE];
@@ -807,22 +800,53 @@ static void logConfigChange(
                               , streamUserString( newConfig->file, &txtOutStream ) );
 }
 
-void reconfigureLogger( Logger* logger, const LoggerConfig* newConfig, LogLevel generalLevel )
+void destructLoggerConfig( LoggerConfig* loggerConfig )
 {
+    ELASTIC_APM_ASSERT_VALID_PTR( loggerConfig );
+
+    ELASTIC_APM_PEFREE_STRING_AND_SET_TO_NULL( loggerConfig->file );
+}
+
+ResultCode reconfigureLogger( Logger* logger, const LoggerConfig* newConfig, LogLevel generalLevel )
+{
+    ResultCode resultCode;
     LoggerConfig derivedNewConfig = *newConfig;
+    String filePathCopy = NULL;
     deriveLoggerConfig( newConfig, generalLevel, &derivedNewConfig );
 
     if ( areEqualLoggerConfigs( &logger->config, &derivedNewConfig ) )
     {
         ELASTIC_APM_LOG_DEBUG( "Logger configuration did not change" );
-        return;
+        resultCode = resultSuccess;
+        goto finally;
     }
 
-    const LoggerConfig oldConfig = logger->config;
+    if ( newConfig->file != NULL )
+    {
+        ELASTIC_APM_PEMALLOC_DUP_STRING_IF_FAILED_GOTO( newConfig->file, /* out */ filePathCopy );
+    }
+
+    LoggerConfig oldConfig = logger->config;
     const LogLevel oldMaxEnabledLevel = logger->maxEnabledLevel;
     logger->config = derivedNewConfig;
+    logger->config.file = filePathCopy;
+    filePathCopy = NULL;
     logger->maxEnabledLevel = calcMaxEnabledLogLevel( logger->config.levelPerSinkType );
     logConfigChange( &oldConfig, oldMaxEnabledLevel, &logger->config, logger->maxEnabledLevel );
+
+#   ifndef PHP_WIN32
+    g_elasticApmDirectLogLevelSyslog = logger->config.levelPerSinkType[ logSink_syslog ];
+#   endif // #ifndef PHP_WIN32
+    g_elasticApmDirectLogLevelStderr = logger->config.levelPerSinkType[ logSink_stderr ];
+
+    destructLoggerConfig( &oldConfig );
+    resultCode = resultSuccess;
+    finally:
+    return resultCode;
+
+    failure:
+    ELASTIC_APM_PEFREE_STRING_AND_SET_TO_NULL( filePathCopy );
+    goto finally;
 }
 
 ResultCode constructLogger( Logger* logger )
@@ -833,7 +857,7 @@ ResultCode constructLogger( Logger* logger )
 
     if ( g_logMutex == NULL )
     {
-        ELASTIC_APM_CALL_IF_FAILED_GOTO( newMutex( &g_logMutex, "global logger" ) );
+        ELASTIC_APM_CALL_IF_FAILED_GOTO( newMutex( &g_logMutex, g_logMutexDesc ) );
     }
 
     setLoggerConfigToDefaults( &( logger->config ) );
@@ -859,8 +883,9 @@ void destructLogger( Logger* logger )
 {
     ELASTIC_APM_ASSERT_VALID_PTR( logger );
 
-    ELASTIC_APM_PEFREE_STRING_AND_SET_TO_NULL( loggerMessageBufferSize, logger->auxMessageBuffer );
-    ELASTIC_APM_PEFREE_STRING_AND_SET_TO_NULL( loggerMessageBufferSize, logger->messageBuffer );
+    destructLoggerConfig( &( logger->config ) );
+    ELASTIC_APM_PEFREE_STRING_SIZE_AND_SET_TO_NULL( loggerMessageBufferSize, logger->auxMessageBuffer );
+    ELASTIC_APM_PEFREE_STRING_SIZE_AND_SET_TO_NULL( loggerMessageBufferSize, logger->messageBuffer );
 
     if ( g_logMutex != NULL )
     {
@@ -871,4 +896,29 @@ void destructLogger( Logger* logger )
 Logger* getGlobalLogger()
 {
     return &getGlobalTracer()->logger;
+}
+
+ResultCode resetLoggingStateInForkedChild()
+{
+    // We SHOULD NOT log before resetting state because logging uses thread synchronization
+    // which might deadlock in forked child
+
+    ResultCode resultCode;
+
+    g_isInLogContext = true;
+
+    if ( g_logMutex != NULL )
+    {
+        deleteMutex( &g_logMutex );
+        ELASTIC_APM_CALL_IF_FAILED_GOTO( newMutex( &g_logMutex, g_logMutexDesc ) );
+    }
+
+    resultCode = resultSuccess;
+
+    finally:
+    g_isInLogContext = false;
+    return resultCode;
+
+    failure:
+    goto finally;
 }

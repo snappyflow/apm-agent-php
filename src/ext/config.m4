@@ -92,7 +92,7 @@ if test "$PHP_ELASTIC_APM" != "no"; then
     php_error.c \
     platform.c \
     platform_threads_linux.c \
-    RequestScoped.c \
+    ResultCode.c \
     supportability.c \
     SystemMetrics.c \
     TextOutputStream.c \
@@ -104,7 +104,7 @@ if test "$PHP_ELASTIC_APM" != "no"; then
   "
 
   PHP_NEW_EXTENSION(elastic_apm, $ELASTIC_APM_PHP_EXT_SOURCES, $ext_shared)
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -Werror"
   PHP_SUBST(EXTRA_CFLAGS)
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lcurl"
   PHP_SUBST(EXTRA_LDFLAGS)

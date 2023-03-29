@@ -23,45 +23,55 @@
 #include <math.h>
 #include "log.h"
 #include "platform.h"
+#include "util.h"
+#include "basic_macros.h"
 
 #define ELASTIC_APM_CURRENT_LOG_CATEGORY ELASTIC_APM_LOG_CATEGORY_UTIL
 
-Duration makeDuration( Int64 value, DurationUnits units )
+StringView durationUnitsNames[ numberOfDurationUnits ] =
 {
-    switch (units)
+    [ durationUnits_millisecond ] = ELASTIC_APM_STRING_LITERAL_TO_VIEW( "ms" ),
+    [ durationUnits_second ] = ELASTIC_APM_STRING_LITERAL_TO_VIEW( "s" ),
+    [ durationUnits_minute ] = ELASTIC_APM_STRING_LITERAL_TO_VIEW( "m" ),
+};
+
+ResultCode parseDuration( StringView inputString, DurationUnits defaultUnits, /* out */ Duration* result )
+{
+    ELASTIC_APM_ASSERT_VALID_PTR( result );
+
+    size_t unitsIndex;
+    ResultCode resultCode = parseDecimalIntegerWithUnits( inputString, durationUnitsNames, numberOfDurationUnits, &result->valueInUnits, &unitsIndex );
+    if ( resultCode == resultSuccess )
     {
-        case durationUnits_milliseconds:
-            return (Duration){ .valueInMilliseconds = value };
-
-        case durationUnits_seconds:
-            return (Duration){ .valueInMilliseconds = value * 1000 * 1000 };
-
-        case durationUnits_minutes:
-            return (Duration){ .valueInMilliseconds = value * 1000 * 1000 * 60 };
-
-        default:
-            ELASTIC_APM_ASSERT( false, "Unknown duration units (as int): %d", units );
-            return (Duration){ .valueInMilliseconds = value };
+        result->units = ( unitsIndex == numberOfDurationUnits ? defaultUnits : (DurationUnits)unitsIndex );
     }
-}
-
-ResultCode parseDuration( StringView valueAsString, DurationUnits defaultUnits, /* out */ Duration* result )
-{
-    result->valueInMilliseconds = 10;
-
-    return resultSuccess;
+    return resultCode;
 }
 
 String streamDuration( Duration duration, TextOutputStream* txtOutStream )
 {
-    // so 5s and not 5000ms
-
-    return streamPrintf( txtOutStream, "%"PRIu64"ms", duration.valueInMilliseconds );
+    return isValidDurationUnits( duration.units )
+           ? streamPrintf( txtOutStream, "%"PRId64"%s", duration.valueInUnits, durationUnitsToString( duration.units ) )
+           : streamPrintf( txtOutStream, "%"PRId64"<invalid units as int: %d>", duration.valueInUnits, duration.units );
 }
 
-double durationToMilliseconds( Duration duration )
+Int64 durationToMilliseconds( Duration duration )
 {
-    return (double)duration.valueInMilliseconds;
+    switch (duration.units)
+    {
+        case durationUnits_millisecond:
+            return duration.valueInUnits;
+
+        case durationUnits_second:
+            return duration.valueInUnits * 1000;
+
+        case durationUnits_minute:
+            return duration.valueInUnits * 60 * 1000;
+
+        default:
+            ELASTIC_APM_ASSERT( false, "Unknown duration units (as int): %d", duration.units );
+            return duration.valueInUnits;
+    }
 }
 
 #ifdef PHP_WIN32
@@ -225,4 +235,36 @@ int compareAbsTimeSpecs( const TimeSpec* a, const TimeSpec* b )
     return ELASTIC_APM_NUMCMP( a->tv_nsec, b->tv_nsec );
 
 #undef ELASTIC_APM_NUMCMP
+}
+
+static const long microsecondsInSecond = 1000 * 1000;
+static const long nanosecondsInMicrosecond = 1000;
+
+TimeVal calcEndTimeVal( TimeVal beginTime, long seconds, long nanoSeconds )
+{
+    TimeVal endTime = { .tv_sec = beginTime.tv_sec + seconds, .tv_usec = beginTime.tv_usec + ( nanoSeconds / nanosecondsInMicrosecond ) };
+
+    if ( endTime.tv_usec >= microsecondsInSecond )
+    {
+        endTime.tv_sec += endTime.tv_usec / microsecondsInSecond;
+        endTime.tv_usec = endTime.tv_usec % microsecondsInSecond;
+    }
+
+    return endTime;
+}
+
+TimeVal calcTimeValDiff( TimeVal beginTime, TimeVal endTime )
+{
+    TimeVal diff;
+
+    diff.tv_sec = endTime.tv_sec - beginTime.tv_sec;
+    diff.tv_usec = endTime.tv_usec - beginTime.tv_usec;
+
+    if ( diff.tv_usec < 0 && diff.tv_sec > 0 )
+    {
+        --diff.tv_sec;
+        diff.tv_usec = ( microsecondsInSecond + endTime.tv_usec ) - beginTime.tv_usec;
+    }
+
+    return diff;
 }

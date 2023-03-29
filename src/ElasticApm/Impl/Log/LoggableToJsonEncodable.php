@@ -40,6 +40,8 @@ final class LoggableToJsonEncodable
 {
     use StaticClassTrait;
 
+    private const MAX_DEPTH = 10;
+
     private const IS_DTO_OBJECT_CACHE_MAX_COUNT_LOW_WATER_MARK = 10000;
     private const IS_DTO_OBJECT_CACHE_MAX_COUNT_HIGH_WATER_MARK
         = 2 * self::IS_DTO_OBJECT_CACHE_MAX_COUNT_LOW_WATER_MARK;
@@ -54,7 +56,7 @@ final class LoggableToJsonEncodable
      */
     public static function convert($value, int $depth)
     {
-        if (is_null($value)) {
+        if ($value === null) {
             return null;
         }
 
@@ -65,7 +67,7 @@ final class LoggableToJsonEncodable
         }
 
         if (is_array($value)) {
-            if ($depth >= 7) {
+            if ($depth >= self::MAX_DEPTH) {
                 return [
                     LogConsts::MAX_DEPTH_REACHED => $depth,
                     LogConsts::TYPE_KEY          => DbgUtil::getType($value),
@@ -80,7 +82,7 @@ final class LoggableToJsonEncodable
         }
 
         if (is_object($value)) {
-            if ($depth >= 7) {
+            if ($depth >= self::MAX_DEPTH) {
                 return [
                     LogConsts::MAX_DEPTH_REACHED => $depth,
                     LogConsts::TYPE_KEY          => DbgUtil::getType($value),
@@ -99,23 +101,7 @@ final class LoggableToJsonEncodable
      */
     private static function convertArray(array $array, int $depth): array
     {
-        return self::convertArrayImpl($array, self::isListArray($array), $depth);
-    }
-
-    /**
-     * @param array<mixed, mixed> $array
-     *
-     * @return bool
-     */
-    private static function isListArray(array $array): bool
-    {
-        $expectedKey = 0;
-        foreach ($array as $key => $_) {
-            if ($key !== $expectedKey++) {
-                return false;
-            }
-        }
-        return true;
+        return self::convertArrayImpl($array, ArrayUtil::isList($array), $depth);
     }
 
     /**
@@ -261,8 +247,11 @@ final class LoggableToJsonEncodable
             return self::convertThrowable($object, $depth);
         }
 
-        if (TextUtil::isPrefixOf('Elastic\\Apm\\', get_class($object)) && self::isDtoObject($object)) {
-            return self::convertDtoObject($object);
+        $fqClassName = get_class($object);
+        $isFromElasticNamespace = TextUtil::isPrefixOf('Elastic\\Apm\\', $fqClassName)
+                                  || TextUtil::isPrefixOf('ElasticApmTests\\', $fqClassName);
+        if ($isFromElasticNamespace && self::isDtoObject($object)) {
+            return self::convertDtoObject($object, $depth);
         }
 
         if (method_exists($object, '__debugInfo')) {
@@ -315,14 +304,17 @@ final class LoggableToJsonEncodable
 
     /**
      * @param object $object
+     * @param int    $depth
      *
-     * @return array<string, mixed>|string
+     * @return string|array<string, mixed>
+     * @phpstan-return array<string, mixed>
      */
-    private static function convertDtoObject(object $object)
+    private static function convertDtoObject(object $object, int $depth)
     {
         $class = get_class($object);
         try {
             $currentClass = new ReflectionClass($class);
+            /** @phpstan-ignore-next-line */
         } catch (ReflectionException $ex) {
             return LoggingSubsystem::onInternalFailure('Failed to reflect', ['class' => $class], $ex);
         }
@@ -336,7 +328,7 @@ final class LoggableToJsonEncodable
 
                 $propName = $reflectionProperty->name;
                 $propValue = $reflectionProperty->getValue($object);
-                $nameToValue[$propName] = $propValue;
+                $nameToValue[$propName] = self::convert($propValue, $depth);
             }
             $currentClass = $currentClass->getParentClass();
             if ($currentClass === false) {
@@ -350,7 +342,7 @@ final class LoggableToJsonEncodable
     {
         $class = get_class($object);
         $valueInCache = ArrayUtil::getValueIfKeyExistsElse($class, self::$isDtoObjectCache, null);
-        if (!is_null($valueInCache)) {
+        if ($valueInCache !== null) {
             return $valueInCache;
         }
 
@@ -362,9 +354,9 @@ final class LoggableToJsonEncodable
     }
 
     /**
-     * @param string                      $className
+     * @template T of object
      *
-     * @phpstan-param class-string<mixed> $className
+     * @param class-string<T> $className
      *
      * @return bool
      */
@@ -372,6 +364,7 @@ final class LoggableToJsonEncodable
     {
         try {
             $currentClass = new ReflectionClass($className);
+            /** @phpstan-ignore-next-line */
         } catch (ReflectionException $ex) {
             LoggingSubsystem::onInternalFailure('Failed to reflect', ['className' => $className], $ex);
             return false;

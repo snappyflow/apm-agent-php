@@ -40,12 +40,12 @@ use Elastic\Apm\Impl\Config\StringOptionParser;
 use Elastic\Apm\Impl\Config\WildcardListOptionParser;
 use Elastic\Apm\Impl\Log\LoggableToString;
 use Elastic\Apm\Impl\Util\DbgUtil;
+use Elastic\Apm\Impl\Util\RangeUtil;
 use ElasticApmTests\ComponentTests\Util\AllComponentTestsOptionsMetadata;
+use ElasticApmTests\ComponentTests\Util\ConfigSnapshotForTests;
 use ElasticApmTests\ComponentTests\Util\CustomOptionParser;
-use ElasticApmTests\ComponentTests\Util\TestConfigSnapshot;
 use ElasticApmTests\Util\IterableUtilForTests;
 use ElasticApmTests\Util\RandomUtilForTests;
-use ElasticApmTests\Util\RangeUtilForTests;
 use ElasticApmTests\Util\TestCaseBase;
 use RuntimeException;
 use SebastianBergmann\GlobalState\Snapshot;
@@ -61,29 +61,30 @@ class VariousOptionsParsingTest extends TestCaseBase
         OptionMetadata $optMeta
     ): OptionTestValuesGeneratorInterface {
         $optionParser = $optMeta->parser();
+
         if ($optionParser instanceof BoolOptionParser) {
-            return new EnumOptionTestValuesGenerator(
+            return new EnumOptionTestValuesGenerator( // @phpstan-ignore-line
                 $optionParser,
                 /* additionalValidValues: */ [new OptionTestValidValue('', false)]
             );
         }
         if ($optionParser instanceof DurationOptionParser) {
-            return new DurationOptionTestValuesGenerator($optionParser);
+            return new DurationOptionTestValuesGenerator($optionParser); // @phpstan-ignore-line
         }
         if ($optionParser instanceof EnumOptionParser) {
-            return new EnumOptionTestValuesGenerator($optionParser);
+            return new EnumOptionTestValuesGenerator($optionParser); // @phpstan-ignore-line
         }
         if ($optionParser instanceof FloatOptionParser) {
-            return new FloatOptionTestValuesGenerator($optionParser);
+            return new FloatOptionTestValuesGenerator($optionParser); // @phpstan-ignore-line
         }
         if ($optionParser instanceof IntOptionParser) {
-            return new IntOptionTestValuesGenerator($optionParser);
+            return new IntOptionTestValuesGenerator($optionParser); // @phpstan-ignore-line
         }
         if ($optionParser instanceof StringOptionParser) {
-            return StringOptionTestValuesGenerator::singletonInstance();
+            return StringOptionTestValuesGenerator::singletonInstance(); // @phpstan-ignore-line
         }
         if ($optionParser instanceof WildcardListOptionParser) {
-            return WildcardListOptionTestValuesGenerator::singletonInstance();
+            return WildcardListOptionTestValuesGenerator::singletonInstance(); // @phpstan-ignore-line
         }
 
         throw new RuntimeException('Unknown option metadata type: ' . DbgUtil::getType($optMeta));
@@ -130,18 +131,18 @@ class VariousOptionsParsingTest extends TestCaseBase
             -987.654 /* defaultValue */
         );
 
-        return $result;
+        return $result; // @phpstan-ignore-line
     }
 
     /**
-     * @return array<string|null, array>
+     * @return array<string|null, array<string, OptionMetadata<mixed>>>
      */
     private function snapshotClassToOptionsMeta(): array
     {
         return [
-            Snapshot::class           => AllOptionsMetadata::get(),
-            TestConfigSnapshot::class => AllComponentTestsOptionsMetadata::get(),
-            null                      => self::additionalOptionMetas(),
+            Snapshot::class               => AllOptionsMetadata::get(),
+            ConfigSnapshotForTests::class => AllComponentTestsOptionsMetadata::get(),
+            null                          => self::additionalOptionMetas(),
         ];
     }
 
@@ -233,8 +234,6 @@ class VariousOptionsParsingTest extends TestCaseBase
      *
      * @param string                $optMetaDbgDesc
      * @param OptionMetadata<mixed> $optMeta
-     *
-     * @noinspection PhpUnusedParameterInspection
      */
     public function testParseInvalidValue(string $optMetaDbgDesc, OptionMetadata $optMeta): void
     {
@@ -245,7 +244,7 @@ class VariousOptionsParsingTest extends TestCaseBase
     {
         $whiteSpaceChars = [' ', "\t"];
         $result = '';
-        foreach (RangeUtilForTests::generateUpTo(3) as $ignored) {
+        foreach (RangeUtil::generateUpTo(3) as $ignored) {
             $result .= RandomUtilForTests::getRandomValueFromArray($whiteSpaceChars);
         }
         return $result;
@@ -299,12 +298,10 @@ class VariousOptionsParsingTest extends TestCaseBase
     }
 
     /**
-     * @dataProvider   allOptionsMetadataProvider
+     * @dataProvider allOptionsMetadataProvider
      *
      * @param string                $optMetaDbgDesc
      * @param OptionMetadata<mixed> $optMeta
-     *
-     * @noinspection   PhpUnusedParameterInspection
      */
     public function testParseValidValue(string $optMetaDbgDesc, OptionMetadata $optMeta): void
     {

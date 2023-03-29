@@ -30,6 +30,9 @@
 #define ELASTIC_APM_PHP_PART_SHUTDOWN_FUNC ELASTIC_APM_PHP_PART_FUNC_PREFIX "shutdown"
 #define ELASTIC_APM_PHP_PART_INTERCEPTED_CALL_PRE_HOOK_FUNC ELASTIC_APM_PHP_PART_FUNC_PREFIX "interceptedCallPreHook"
 #define ELASTIC_APM_PHP_PART_INTERCEPTED_CALL_POST_HOOK_FUNC ELASTIC_APM_PHP_PART_FUNC_PREFIX "interceptedCallPostHook"
+#define ELASTIC_APM_PHP_PART_ON_PHP_ERROR_FUNC ELASTIC_APM_PHP_PART_FUNC_PREFIX "onPhpError"
+#define ELASTIC_APM_PHP_PART_SET_LAST_THROWN_FUNC ELASTIC_APM_PHP_PART_FUNC_PREFIX "setLastThrown"
+#define ELASTIC_APM_PHP_PART_EMPTY_METHOD_FUNC ELASTIC_APM_PHP_PART_FUNC_PREFIX "emptyMethod"
 
 ResultCode bootstrapTracerPhpPart( const ConfigSnapshot* config, const TimePoint* requestInitStartTime )
 {
@@ -50,7 +53,7 @@ ResultCode bootstrapTracerPhpPart( const ConfigSnapshot* config, const TimePoint
         // For now, we don't consider `bootstrap_php_part_file' option not being set as a failure
         GetConfigManagerOptionMetadataResult getMetaRes;
         getConfigManagerOptionMetadata( getGlobalTracer()->configManager, optionId_bootstrapPhpPartFile, &getMetaRes );
-        ELASTIC_APM_LOG_INFO( "Configuration option `%s' is not set", getMetaRes.optName );
+        ELASTIC_APM_LOG_ERROR( "Configuration option `%s' is not set", getMetaRes.optName );
         resultCode = resultSuccess;
         goto finally;
     }
@@ -94,7 +97,7 @@ void shutdownTracerPhpPart( const ConfigSnapshot* config )
         // For now, we don't consider `bootstrap_php_part_file' option not being set as a failure
         GetConfigManagerOptionMetadataResult getMetaRes;
         getConfigManagerOptionMetadata( getGlobalTracer()->configManager, optionId_bootstrapPhpPartFile, &getMetaRes );
-        ELASTIC_APM_LOG_INFO( "Configuration option `%s' is not set", getMetaRes.optName );
+        ELASTIC_APM_LOG_ERROR( "Configuration option `%s' is not set", getMetaRes.optName );
         resultCode = resultSuccess;
         goto finally;
     }
@@ -203,8 +206,35 @@ void tracerPhpPartInterceptedCallPostHook( uint32_t dbgInterceptRegistrationId, 
 
     finally:
 
-    ELASTIC_APM_LOG_TRACE_FUNCTION_EXIT_RESULT_CODE_MSG( "dbgInterceptRegistrationId: %u; interceptedCallRetValOrThrown type: %u."
+    ELASTIC_APM_LOG_TRACE_RESULT_CODE_FUNCTION_EXIT_MSG( "dbgInterceptRegistrationId: %u; interceptedCallRetValOrThrown type: %u."
                                                          , dbgInterceptRegistrationId, Z_TYPE_P( interceptedCallRetValOrThrown ) );
+    ELASTIC_APM_UNUSED( resultCode );
+    return;
+
+    failure:
+    goto finally;
+}
+
+void tracerPhpPartInterceptedCallEmptyMethod()
+{
+    ELASTIC_APM_LOG_TRACE_FUNCTION_ENTRY();
+
+    ResultCode resultCode;
+    zval phpPartDummyArgs[ 1 ];
+    ZVAL_UNDEF( &( phpPartDummyArgs[ 0 ] ) );
+
+    ELASTIC_APM_CALL_IF_FAILED_GOTO(
+            callPhpFunctionRetVoid(
+                    ELASTIC_APM_STRING_LITERAL_TO_VIEW( ELASTIC_APM_PHP_PART_EMPTY_METHOD_FUNC )
+                    , 0 /* <- argsCount */
+                    , phpPartDummyArgs ) );
+    ELASTIC_APM_LOG_TRACE( "Successfully finished call to PHP part" );
+
+    resultCode = resultSuccess;
+
+    finally:
+
+    ELASTIC_APM_LOG_TRACE_RESULT_CODE_FUNCTION_EXIT();
     ELASTIC_APM_UNUSED( resultCode );
     return;
 

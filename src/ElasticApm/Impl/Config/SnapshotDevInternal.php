@@ -29,8 +29,6 @@ use Elastic\Apm\Impl\Log\LoggableTrait;
 use Elastic\Apm\Impl\Log\LoggerFactory;
 use Elastic\Apm\Impl\Util\TextUtil;
 use Elastic\Apm\Impl\Util\WildcardListMatcher;
-use ReflectionClass;
-use ReflectionException;
 
 /**
  * Code in this file is part of implementation internals and thus it is not covered by the backward compatibility.
@@ -57,8 +55,7 @@ final class SnapshotDevInternal implements LoggableInterface
     {
         $logger = $loggerFactory->loggerForClass(LogCategory::CONFIGURATION, __NAMESPACE__, __CLASS__, __FILE__);
 
-        /** @phpstan-ignore-next-line */
-        foreach ($this as $propName => $propVal) {
+        foreach (get_object_vars($this) as $propName => $propValue) {
             $subOptName = TextUtil::camelToSnakeCase($propName);
             $matchedExpr = WildcardListMatcher::matchNullable($devInternal, $subOptName);
             if ($matchedExpr === null) {

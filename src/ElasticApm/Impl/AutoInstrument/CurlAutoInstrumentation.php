@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace Elastic\Apm\Impl\AutoInstrument;
 
+use Elastic\Apm\Impl\AutoInstrument\Util\AutoInstrumentationUtil;
 use Elastic\Apm\Impl\Log\LogCategory;
 use Elastic\Apm\Impl\Log\Logger;
 use Elastic\Apm\Impl\Tracer;
@@ -100,11 +101,9 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
         $ctx->interceptCallsToFunction(
             $funcName,
             /**
-             * @param mixed[] $interceptedCallArgs Intercepted call arguments
+             * @param mixed[] $interceptedCallArgs
              *
-             * @return callable
-             *
-             * @phpstan-return callable(int, bool, mixed): mixed
+             * @return null|callable(int, bool, mixed): void
              */
             function (array $interceptedCallArgs) use ($funcName, $funcId): ?callable {
                 return $this->preHook($funcName, $funcId, $interceptedCallArgs);
@@ -117,8 +116,7 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
      * @param int     $funcId
      * @param mixed[] $interceptedCallArgs Intercepted call arguments
      *
-     * @return callable
-     * @phpstan-return callable(int, bool, mixed): mixed
+     * @return null|callable(int, bool, mixed): void
      */
     private function preHook(string $funcName, int $funcId, array $interceptedCallArgs): ?callable
     {
@@ -172,7 +170,7 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
         bool $hasExitedByException,
         $returnValueOrThrown
     ): void {
-        self::assertInterceptedCallNotExitedByException(
+        AutoInstrumentationUtil::assertInterceptedCallNotExitedByException(
             $hasExitedByException,
             ['functionName' => $dbgFuncName]
         );
@@ -223,21 +221,18 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
      * @param string  $dbgFuncName
      * @param mixed[] $interceptedCallArgs
      *
-     * @return resource|null
+     * @return ?CurlHandleWrapped
      */
     public static function extractCurlHandleFromArgs(
         Logger $logger,
         string $dbgFuncName,
         array $interceptedCallArgs
-    ) {
+    ): ?CurlHandleWrapped {
         if (count($interceptedCallArgs) !== 0) {
-            // Prior to PHP 8 $curlHandle is a resource
-            // For PHP 8+ $curlHandle is an instance of CurlHandle class
-            $isValidCurlHandle = (PHP_MAJOR_VERSION < 8)
-                ? is_resource($interceptedCallArgs[0])
-                : is_object($interceptedCallArgs[0]);
-            if ($isValidCurlHandle) {
-                return $interceptedCallArgs[0];
+            $curlHandle = $interceptedCallArgs[0];
+            if (CurlHandleWrapped::isValidValue($curlHandle)) {
+                /** @var resource|object $curlHandle */
+                return new CurlHandleWrapped($curlHandle);
             }
         }
 
@@ -264,11 +259,11 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
     private function findHandleId(string $dbgFuncName, array $interceptedCallArgs): ?int
     {
         $curlHandle = self::extractCurlHandleFromArgs($this->logger, $dbgFuncName, $interceptedCallArgs);
-        if (is_null($curlHandle)) {
+        if ($curlHandle === null) {
             return null;
         }
 
-        $handleId = intval($curlHandle);
+        $handleId = $curlHandle->asInt();
 
         if (!array_key_exists($handleId, $this->handleIdToTracker)) {
             ($loggerProxy = $this->logger->ifWarningLevelEnabled(__LINE__, __FUNCTION__))
@@ -289,7 +284,7 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
     {
         $handleId = $this->findHandleId($dbgFuncName, $interceptedCallArgs);
 
-        return is_null($handleId) ? null : $this->handleIdToTracker[$handleId];
+        return $handleId === null ? null : $this->handleIdToTracker[$handleId];
     }
 
     /**
@@ -317,7 +312,7 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
 
             default:
                 $curlHandleTracker = $this->findHandleTracker($dbgFuncName, $interceptedCallArgs);
-                if (!is_null($curlHandleTracker)) {
+                if ($curlHandleTracker !== null) {
                     $curlHandleTracker->preHook($dbgFuncName, $funcId, $interceptedCallArgs);
                 }
                 return $curlHandleTracker;
@@ -343,7 +338,7 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
     public function setTrackerHandle(CurlHandleTracker $curlHandleTracker, $curlHandle): void
     {
         $handleId = $curlHandleTracker->setHandle($curlHandle);
-        if (!is_null($handleId)) {
+        if ($handleId !== null) {
             $this->addToHandleIdToTracker($handleId, $curlHandleTracker);
         }
     }
@@ -357,7 +352,7 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
     public function curlCopyHandlePreHook(string $dbgFuncName, array $interceptedCallArgs): ?CurlHandleTracker
     {
         $srcCurlHandleTracker = $this->findHandleTracker($dbgFuncName, $interceptedCallArgs);
-        if (is_null($srcCurlHandleTracker)) {
+        if ($srcCurlHandleTracker === null) {
             return null;
         }
 
@@ -371,7 +366,7 @@ final class CurlAutoInstrumentation extends AutoInstrumentationBase
     public function curlClosePreHook(string $dbgFuncName, array $interceptedCallArgs): void
     {
         $handleId = $this->findHandleId($dbgFuncName, $interceptedCallArgs);
-        if (is_null($handleId)) {
+        if ($handleId === null) {
             return;
         }
 

@@ -27,10 +27,7 @@ use ElasticApmTests\TestsRootDir;
 
 // Ensure that composer has installed all dependencies
 if (!file_exists(dirname(__DIR__) . '/composer.lock')) {
-    die(
-        "Dependencies must be installed using composer:\n\nphp composer.phar install --dev\n\n"
-        . "See http://getcomposer.org for help with installing composer\n"
-    );
+    die("Dependencies must be installed using composer\n");
 }
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -38,5 +35,9 @@ require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/polyfills/load.php';
 require __DIR__ . '/dummyFuncForTestsWithoutNamespace.php';
 require __DIR__ . '/ElasticApmTests/dummyFuncForTestsWithNamespace.php';
+
+require __DIR__ . '/ElasticApmTests/ComponentTests/appCodeForTestCaughtExceptionResponded500.php';
+require __DIR__ . '/ElasticApmTests/ComponentTests/appCodeForTestPhpErrorUncaughtException.php';
+require __DIR__ . '/ElasticApmTests/ComponentTests/appCodeForTestPhpErrorUndefinedVariable.php';
 
 TestsRootDir::$fullPath = __DIR__;

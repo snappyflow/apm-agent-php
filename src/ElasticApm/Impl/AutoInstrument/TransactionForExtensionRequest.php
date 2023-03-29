@@ -25,15 +25,24 @@ namespace Elastic\Apm\Impl\AutoInstrument;
 
 use Elastic\Apm\Impl\Config\DevInternalSubOptionNames;
 use Elastic\Apm\Impl\Config\OptionNames;
+use Elastic\Apm\Impl\Config\Snapshot as ConfigSnapshot;
 use Elastic\Apm\Impl\Constants;
 use Elastic\Apm\Impl\HttpDistributedTracing;
+use Elastic\Apm\Impl\InferredSpansManager;
 use Elastic\Apm\Impl\Log\LogCategory;
 use Elastic\Apm\Impl\Log\Logger;
+use Elastic\Apm\Impl\Span;
 use Elastic\Apm\Impl\Tracer;
+use Elastic\Apm\Impl\Transaction;
+use Elastic\Apm\Impl\Util\ArrayUtil;
+use Elastic\Apm\Impl\Util\DbgUtil;
+use Elastic\Apm\Impl\Util\TextUtil;
+use Elastic\Apm\Impl\Util\TimeUtil;
 use Elastic\Apm\Impl\Util\UrlParts;
 use Elastic\Apm\Impl\Util\UrlUtil;
 use Elastic\Apm\Impl\Util\WildcardListMatcher;
 use Elastic\Apm\TransactionInterface;
+use Throwable;
 
 /**
  * Code in this file is part of implementation internals and thus it is not covered by the backward compatibility.
@@ -43,6 +52,8 @@ use Elastic\Apm\TransactionInterface;
 final class TransactionForExtensionRequest
 {
     private const DEFAULT_NAME = 'Unnamed transaction';
+
+    private const LARAVEL_ARTISAN_COMMAND_SCRIPT = 'artisan';
 
     /** @var Tracer */
     private $tracer;
@@ -62,13 +73,51 @@ final class TransactionForExtensionRequest
     /** @var ?TransactionInterface */
     private $transactionForRequest;
 
+    /** @var ?Throwable  */
+    private $lastThrown = null;
+
+    /** @var ?InferredSpansManager  */
+    private $inferredSpansManager = null;
+
     public function __construct(Tracer $tracer, float $requestInitStartTime)
     {
         $this->tracer = $tracer;
         $this->logger = $tracer->loggerFactory()
-                               ->loggerForClass(LogCategory::AUTO_INSTRUMENTATION, __NAMESPACE__, __CLASS__, __FILE__);
+                               ->loggerForClass(LogCategory::AUTO_INSTRUMENTATION, __NAMESPACE__, __CLASS__, __FILE__)
+                               ->addContext('this', $this);
 
         $this->transactionForRequest = $this->beginTransaction($requestInitStartTime);
+        if ($this->transactionForRequest instanceof Transaction && $this->transactionForRequest->isSampled()) {
+            $this->inferredSpansManager = new InferredSpansManager($tracer);
+        }
+
+        $this->tracer->onNewCurrentTransactionHasBegun->add(
+            function (Transaction $transaction): void {
+                PhpPartFacade::ensureHaveLatestDataDeferredByExtension();
+                $transaction->onAboutToEnd->add(
+                    function (Transaction $ignored): void {
+                        PhpPartFacade::ensureHaveLatestDataDeferredByExtension();
+                    }
+                );
+                $transaction->onCurrentSpanChanged->add(
+                    function (?Span $span): void {
+                        PhpPartFacade::ensureHaveLatestDataDeferredByExtension();
+                        if ($span !== null) {
+                            $span->onAboutToEnd->add(
+                                function (Span $ignored): void {
+                                    PhpPartFacade::ensureHaveLatestDataDeferredByExtension();
+                                }
+                            );
+                        }
+                    }
+                );
+            }
+        );
+    }
+
+    public function getConfig(): ConfigSnapshot
+    {
+        return $this->tracer->getConfig();
     }
 
     private function beginTransaction(float $requestInitStartTime): ?TransactionInterface
@@ -80,10 +129,16 @@ final class TransactionForExtensionRequest
         }
         $name = self::isCliScript() ? $this->discoverCliName() : $this->discoverHttpName();
         $type = self::isCliScript() ? Constants::TRANSACTION_TYPE_CLI : Constants::TRANSACTION_TYPE_REQUEST;
-        $timestamp = $this->discoverTimestamp($requestInitStartTime);
-        $distributedTracingData = $this->discoverIncomingDistributedTracingData();
-
-        $tx = $this->tracer->beginCurrentTransaction($name, $type, $timestamp, $distributedTracingData);
+        $timestamp = $this->discoverStartTime($requestInitStartTime);
+        $distributedTracingHeaders = $this->getDistributedTracingHeaders();
+        $distributedTracingHeaderExtractor = function (string $headerName) use ($distributedTracingHeaders): ?string {
+            return ArrayUtil::getValueIfKeyExistsElse($headerName, $distributedTracingHeaders, null);
+        };
+        $tx = $this->tracer->newTransaction($name, $type)
+                           ->asCurrent()
+                           ->timestamp($timestamp)
+                           ->distributedTracingHeaderExtractor($distributedTracingHeaderExtractor)
+                           ->begin();
         if (!self::isCliScript() && !$tx->isNoop()) {
             $this->setTxPropsBasedOnHttpRequestData($tx);
         }
@@ -108,8 +163,9 @@ final class TransactionForExtensionRequest
 
     private function discoverHttpRequestData(): bool
     {
+        /** @phpstan-ignore-next-line */
         if (!self::isGlobalServerVarSet()) {
-            ($loggerProxy = $this->logger->ifWarningLevelEnabled(__LINE__, __FUNCTION__))
+            ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log('$_SERVER variable is not populated - forcing PHP engine to populate it...');
 
             /**
@@ -120,6 +176,7 @@ final class TransactionForExtensionRequest
              */
             \elastic_apm_force_init_server_global_var();
 
+            /** @phpstan-ignore-next-line */
             if (!self::isGlobalServerVarSet()) {
                 ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
                 && $loggerProxy->log(
@@ -135,8 +192,8 @@ final class TransactionForExtensionRequest
         /** @var ?string */
         $urlQuery = null;
 
-        $pathQuery = self::getMandatoryServerVarElement('REQUEST_URI');
-        if ($pathQuery !== null) {
+        $pathQuery = $this->getMandatoryServerVarStringElement('REQUEST_URI');
+        if (is_string($pathQuery)) {
             UrlUtil::splitPathQuery($pathQuery, /* ref */ $urlPath, /* ref */ $urlQuery);
             if ($urlPath === null) {
                 ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
@@ -151,7 +208,7 @@ final class TransactionForExtensionRequest
             }
         }
 
-        $this->httpMethod = self::getMandatoryServerVarElement('REQUEST_METHOD');
+        $this->httpMethod = $this->getMandatoryServerVarStringElement('REQUEST_METHOD');
 
         $this->urlParts = new UrlParts();
         $this->urlParts->path = $urlPath;
@@ -160,7 +217,7 @@ final class TransactionForExtensionRequest
         $serverHttps = self::getOptionalServerVarElement('HTTPS');
         $this->urlParts->scheme = !empty($serverHttps) ? 'https' : 'http';
 
-        $hostPort = self::getMandatoryServerVarElement('HTTP_HOST');
+        $hostPort = $this->getMandatoryServerVarStringElement('HTTP_HOST');
         if ($hostPort !== null) {
             UrlUtil::splitHostPort($hostPort, /* ref */ $this->urlParts->host, /* ref */ $this->urlParts->port);
             if ($this->urlParts->host === null) {
@@ -262,6 +319,10 @@ final class TransactionForExtensionRequest
         if ($tx->getOutcome() === null) {
             $this->discoverHttpOutcome($tx);
         }
+
+        if ($tx->getOutcome() === Constants::OUTCOME_FAILURE && $this->lastThrown !== null) {
+            $this->tracer->createErrorFromThrowable($this->lastThrown);
+        }
     }
 
     private function logGcStatus(): void
@@ -277,8 +338,53 @@ final class TransactionForExtensionRequest
         && $loggerProxy->log('Called gc_status()', ['gc_status() return value' => $gcStatusRetVal]);
     }
 
+    public function onPhpError(PhpErrorData $phpErrorData): void
+    {
+        $relatedThrowable = null;
+        if (
+            $this->lastThrown !== null
+            && $phpErrorData->message !== null
+            && TextUtil::isPrefixOf('Uncaught Exception: ', $phpErrorData->message, /* isCaseSensitive: */ false)
+        ) {
+            $relatedThrowable = $this->lastThrown;
+            $this->lastThrown = null;
+        }
+        $this->tracer->onPhpError($phpErrorData, $relatedThrowable);
+    }
+
+    /**
+     * @param mixed $lastThrown
+     *
+     * @return void
+     */
+    public function setLastThrown($lastThrown): void
+    {
+        ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
+        && $loggerProxy->log('Entered', ['lastThrown' => $lastThrown]);
+
+        if (!($lastThrown instanceof Throwable)) {
+            ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
+            && $loggerProxy->log(
+                'lastThrown is not an instance of Throwable - ignoring it...',
+                ['lastThrown' => $lastThrown]
+            );
+            return;
+        }
+
+        $this->lastThrown = $lastThrown;
+    }
+
     public function onShutdown(): void
     {
+        ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
+        && $loggerProxy->log('Entered');
+
+        PhpPartFacade::ensureHaveLatestDataDeferredByExtension();
+
+        if ($this->inferredSpansManager !== null) {
+            $this->inferredSpansManager->shutdown();
+        }
+
         $tx = $this->transactionForRequest;
         if ($tx === null || $tx->isNoop() || $tx->hasEnded()) {
             return;
@@ -323,22 +429,45 @@ final class TransactionForExtensionRequest
     private function discoverCliName(): string
     {
         global $argc, $argv;
-        if (isset($argc) && ($argc > 0) && isset($argv) && !empty($argv[0])) {
-            $cliScriptName = basename($argv[0]);
+
+        if (
+            !isset($argc)
+            || ($argc <= 0)
+            || !isset($argv)
+            || (count($argv) == 0)
+            || !is_string($argv[0])
+            || TextUtil::isEmptyString($argv[0])
+        ) {
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
-                'Successfully discovered CLI script name - using it for transaction name',
-                ['cliScriptName' => $cliScriptName]
+                'Could not discover CLI script name - using default transaction name',
+                ['DEFAULT_NAME' => self::DEFAULT_NAME]
+            );
+            return self::DEFAULT_NAME;
+        }
+
+        $cliScriptName = basename($argv[0]);
+        if (
+            ($argc < 2)
+            || (count($argv) < 2)
+            || ($cliScriptName !== self::LARAVEL_ARTISAN_COMMAND_SCRIPT)
+        ) {
+            ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
+            && $loggerProxy->log(
+                'Using CLI script name as transaction name',
+                ['cliScriptName' => $cliScriptName, 'argc' => $argc, 'argv' => $argv]
             );
             return $cliScriptName;
         }
 
+        $txName = $cliScriptName . ' ' . $argv[1];
         ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
         && $loggerProxy->log(
-            'Could not discover CLI script name - using default transaction name',
-            ['DEFAULT_NAME' => self::DEFAULT_NAME]
+            'CLI script is Laravel ' . self::LARAVEL_ARTISAN_COMMAND_SCRIPT . ' command with arguments'
+            . ' - including the first argument in transaction name',
+            ['txName' => $txName, 'argc' => $argc, 'argv' => $argv]
         );
-        return self::DEFAULT_NAME;
+        return $txName;
     }
 
     /**
@@ -367,6 +496,26 @@ final class TransactionForExtensionRequest
         }
 
         return $_SERVER[$key];
+    }
+
+    private function getMandatoryServerVarStringElement(string $key): ?string
+    {
+        $val = $this->getMandatoryServerVarElement($key);
+        if ($val === null) {
+            /** @noinspection PhpExpressionAlwaysNullInspection */
+            return $val;
+        }
+
+        if (!is_string($val)) {
+            ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
+            && $loggerProxy->log(
+                '$_SERVER contains `' . $key . '\' key but the value is not a string',
+                ['value type' => DbgUtil::getType($val)]
+            );
+            return null;
+        }
+
+        return $val;
     }
 
     private function discoverHttpName(): string
@@ -410,39 +559,92 @@ final class TransactionForExtensionRequest
         return $name;
     }
 
-    private function discoverTimestamp(float $requestInitStartTime): float
+    private function discoverStartTime(float $requestInitStartTime): float
     {
         $serverRequestTimeAsString = self::getMandatoryServerVarElement('REQUEST_TIME_FLOAT');
         if ($serverRequestTimeAsString === null) {
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log(
-                'Using requestInitStartTime for transaction serverRequestTimeInMicroseconds',
+                'Using requestInitStartTime for transaction start time'
+                . ' because $_SERVER[\'REQUEST_TIME_FLOAT\'] is not set',
                 ['requestInitStartTime' => $requestInitStartTime]
             );
             return $requestInitStartTime;
         }
 
         $serverRequestTimeInSeconds = floatval($serverRequestTimeAsString);
-        $serverRequestTimeInMicroseconds = $serverRequestTimeInSeconds * 1000000;
+        $serverRequestTimeInMicroseconds = $serverRequestTimeInSeconds * TimeUtil::NUMBER_OF_MICROSECONDS_IN_SECOND;
+        if ($requestInitStartTime < $serverRequestTimeInMicroseconds) {
+            ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
+            && $loggerProxy->log(
+                'Using requestInitStartTime for transaction start time'
+                . ' because $_SERVER[\'REQUEST_TIME_FLOAT\'] is later'
+                . ' (further into the future) than requestInitStartTime',
+                [
+                    'requestInitStartTime'             => $requestInitStartTime,
+                    '$_SERVER[\'REQUEST_TIME_FLOAT\']' => $serverRequestTimeInMicroseconds,
+                    '$_SERVER[\'REQUEST_TIME_FLOAT\'] - requestInitStartTime (seconds)'
+                                                       => TimeUtil::microsecondsToSeconds(
+                                                           $serverRequestTimeInMicroseconds - $requestInitStartTime
+                                                       ),
+                ]
+            );
+            return $requestInitStartTime;
+        }
 
         ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
         && $loggerProxy->log(
-            'Using $_SERVER[\'REQUEST_TIME_FLOAT\'] for transaction serverRequestTimeInMicroseconds',
-            ['serverRequestTimeInMicroseconds' => $serverRequestTimeInMicroseconds]
+            'Using $_SERVER[\'REQUEST_TIME_FLOAT\'] for transaction start time',
+            [
+                '$_SERVER[\'REQUEST_TIME_FLOAT\']' => $serverRequestTimeInMicroseconds,
+                'requestInitStartTime'             => $requestInitStartTime,
+                'requestInitStartTime - $_SERVER[\'REQUEST_TIME_FLOAT\'] (seconds)'
+                                                   => TimeUtil::microsecondsToSeconds(
+                                                       $serverRequestTimeInMicroseconds - $requestInitStartTime
+                                                   ),
+            ]
         );
 
         return $serverRequestTimeInMicroseconds;
     }
 
-    private function discoverIncomingDistributedTracingData(): ?string
+    /**
+     * @return array<string, string>
+     */
+    private function getDistributedTracingHeaders(): array
     {
-        $headerName = HttpDistributedTracing::TRACE_PARENT_HEADER_NAME;
-        $traceParentHeaderKey = 'HTTP_' . strtoupper($headerName);
+        $result = [];
+        $traceParentHeaderValue = $this->getHttpHeader(HttpDistributedTracing::TRACE_PARENT_HEADER_NAME);
+        if ($traceParentHeaderValue === null) {
+            return [];
+        }
+        $result[HttpDistributedTracing::TRACE_PARENT_HEADER_NAME] = $traceParentHeaderValue;
 
-        $traceParentHeaderValue = self::getOptionalServerVarElement($traceParentHeaderKey);
+        $traceStateHeaderValue = $this->getHttpHeader(HttpDistributedTracing::TRACE_STATE_HEADER_NAME);
+        if ($traceStateHeaderValue !== null) {
+            $result[HttpDistributedTracing::TRACE_STATE_HEADER_NAME] = $traceStateHeaderValue;
+        }
+
+        return $result;
+    }
+
+    private function getHttpHeader(string $headerName): ?string
+    {
+        $headerKey = 'HTTP_' . strtoupper($headerName);
+
+        $traceParentHeaderValue = self::getOptionalServerVarElement($headerKey);
         if ($traceParentHeaderValue === null) {
             ($loggerProxy = $this->logger->ifDebugLevelEnabled(__LINE__, __FUNCTION__))
             && $loggerProxy->log('Incoming ' . $headerName . ' HTTP request header not found');
+            return null;
+        }
+
+        if (!is_string($traceParentHeaderValue)) {
+            ($loggerProxy = $this->logger->ifErrorLevelEnabled(__LINE__, __FUNCTION__))
+            && $loggerProxy->log(
+                '$_SERVER contains `' . $headerKey . '\' key but the value is not a string',
+                ['value type' => DbgUtil::getType($traceParentHeaderValue)]
+            );
             return null;
         }
 
