@@ -20,6 +20,50 @@ endif::[]
 
 // Using the template above, release notes go here.
 // CHANGELOG_AUTOMATION_KEYWORD
+[[release-notes-v1.9.1]]
+=== v1.9.1 - 2023/07/06
+[float]
+==== Features
+* Added configuration option: GLOBAL_LABELS {pull}1007[#1007]
+* Introduced new C++ build environment {pull}985[985]
+
+==== Bug fixes
+* Suppress errors and warnings when internally calling opcache_get_status {pull}1013[#1013]
+
+[[release-notes-v1.9.0]]
+=== v1.9.0 - 2023/06/22
+[float]
+==== Features
+* Added container ID detection {pull}966[#966]
+* Extended span compression support to spans without service target {pull}944[#944]
+* Added auto-instrumentation for capturing WordPress filters/actions callbacks and the active theme {pull}948[#948]
+* Added configuration option STACK_TRACE_LIMIT {pull}995[#995]
+* Added SPAN_STACK_TRACE_MIN_DURATION configuration option {pull}996[#996]
+* Implemented backoff on failure in communication to APM Server {pull}999[#999]
+
+==== Bug fixes
+* Fixed not cleaning up connection data in sync backend comm. mode {pull}957[#957]
+* Fixed crash when https://www.php.net/manual/en/function.opcache-reset.php[`opcache_reset()`] is used {pull}1000[#1000]
+
+[[release-notes-v1.8.4]]
+=== v1.8.4 - 2023/05/17
+[float]
+==== Bug fixes
+* Fixed deadlock caused by use of pthread_atfork {pull}964[#964]
+* Fixed verify_server_cert=false not disabling all the checks related to HTTPS certificate {pull}965[#965]
+* Fixed not joining background sender thread if there was fork after module init {pull}959[#959]
+
+[[release-notes-v1.8.3]]
+=== v1.8.3 - 2023/04/21
+[float]
+==== Bug fixes
+* Fixed issue with missing transaction details on some setups {pull}916[#916]
+
+[[release-notes-v1.8.2]]
+=== v1.8.2 - 2023/04/12
+[float]
+==== Bug fixes
+* Fixed agent issue causing PHP to crash when opcache preload feature was enabled {pull}913[#913]
 
 [[release-notes-v1.8.1]]
 === v1.8.1 - 2023/03/09
