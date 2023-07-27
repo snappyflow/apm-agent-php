@@ -221,12 +221,14 @@ function get_extension_file() {
 function is_php_supported() {
     PHP_MAJOR_MINOR=$(php_command -r 'echo PHP_MAJOR_VERSION;').$(php_command -r 'echo PHP_MINOR_VERSION;')
     echo "Detected PHP version '${PHP_MAJOR_MINOR}'"
-    if  [ "${PHP_MAJOR_MINOR}" == "7.2" ] || [ "${PHP_MAJOR_MINOR}" == "7.3" ] || [ "${PHP_MAJOR_MINOR}" == "7.4" ] || [ "${PHP_MAJOR_MINOR}" == "8.0" ] ; then
-        return 0
-    else
-        echo 'Failed. The supported PHP versions are 7.2-7.4 and 8.0.'
-        return 1
-    fi
+    sup_vers=("7.2" "7.3" "7.4" "8.0" "8.1" "8.2")
+    for sv in "${sup_vers[@]}"; do
+       if [[ "$sv" == "${PHP_MAJOR_MINOR}" ]]; then
+          return 0
+       fi
+    done
+    echo "Failed. The supported PHP versions are ${sup_vers[@]}"
+    return 1
 }
 
 
