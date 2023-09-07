@@ -82,7 +82,7 @@ final class MetadataDiscoverer
     {
         $result = new Metadata();
 
-        $result->labels = $this->config->globalLabels();
+        $result->labels = $this->discoverGlobalData($this->config);
         $result->process = $this->discoverProcessData();
         $result->service = $this->discoverServiceData();
         $result->system = $this->discoverSystemData();
@@ -182,6 +182,27 @@ final class MetadataDiscoverer
 
         $result->containerId = $this->discoverContainerId();
 
+        return $result;
+    }
+
+    public function discoverGlobalData(): GlobalLabelData
+    {
+        $result = new GlobalLabelData();
+        $dict = [];
+        if ($this->config->globalLabels() !== null) {
+            // $serializedMetadata .= "\n";
+
+            $labels = explode (",", $this->config->globalLabels());
+            foreach ($labels as $label) {
+                $label_arr = explode("=", $label);
+                $dict[$label_arr[0]] = $label_arr[1];
+            }
+            $result->projectName = $dict['_tag_projectName'];
+            $result->appName = $dict['_tag_appName'];
+            $result->profileId = $dict['_tag_profileId'];
+            // $serializedMetadata = substr($serializedMetadata, 0, -1);
+            // $serializedMetadata .= "}}";
+        }
         return $result;
     }
 

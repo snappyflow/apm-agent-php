@@ -1,31 +1,55 @@
 #!/usr/bin/env bash
 
-######### Let's support alpine installations
-PATH=${PATH}:/usr/local/bin
-
-################################################################################
-############################ GLOBAL VARIABLES ##################################
-################################################################################
-PHP_AGENT_DIR=/opt/elastic/apm-agent-php
+ELASTIC_SERVICE_NAME=$1
+PHP_VERSION=$2
+PHP_AGENT_DIR="/opt/elasticapm/phpagent"
 EXTENSION_DIR="${PHP_AGENT_DIR}/extensions"
 EXTENSION_CFG_DIR="${PHP_AGENT_DIR}/etc"
-BOOTSTRAP_FILE_PATH="${PHP_AGENT_DIR}/src/bootstrap_php_part.php"
+BOOTSTRAP_FILE_PATH="${PHP_AGENT_DIR}/agent/php/bootstrap_php_part.php"
 BACKUP_EXTENSION=".agent.bck"
 ELASTIC_INI_FILE_NAME="elastic-apm.ini"
 CUSTOM_INI_FILE_NAME="elastic-apm-custom.ini"
 
-################################################################################
-########################## FUNCTION CALLS BELOW ################################
-################################################################################
+if [ `which yum` ]; then
+   IS_RHEL=1
+elif [ `which apt` ]; then
+   IS_UBUNTU=1
+elif [ `which apk` ]; then
+   IS_ALPINE=1
+else
+   IS_UNKNOWN=1
+fi
 
-################################################################################
+if [  $IS_UBUNTU == 1 ]; then
+    echo "Ubuntu found"
+    apt install jq -y
+elif [ $IS_RHEL == 1 ]; then
+    echo "centos found"
+    yum install jq -y
+fi
+
+mkdir -p ${PHP_AGENT_DIR}
+mkdir -p ${EXTENSION_CFG_DIR}
+mkdir -p ${EXTENSION_DIR}
+
+
+# wget link to tar file
+# cp output/sf-apm-php-agent-7.0.tar.gz /tmp
+wget -q https://github.com/snappyflow/apm-agent/releases/download/latest/sf-apm-php-agent-${PHP_VERSION}.tar.gz -O /tmp/sf-apm-php-agent.tar.gz
+
+tar xzf /tmp/sf-apm-php-agent.tar.gz -C ${PHP_AGENT_DIR}
+
+cp -rf "${PHP_AGENT_DIR}/agent/native/ext/modules/"* ${EXTENSION_DIR}
+
+touch ${EXTENSION_CFG_DIR}/elastic-apm.ini
+
+
 #### Function php_command ######################################################
 function php_command() {
     PHP_BIN=$(command -v php)
     ${PHP_BIN} -d memory_limit=128M "$@"
 }
 
-################################################################################
 #### Function php_ini_file_path ################################################
 function php_ini_file_path() {
     php_command -i \
@@ -35,16 +59,15 @@ function php_ini_file_path() {
         | awk '{print $1}'
 }
 
-################################################################################
 #### Function php_api ##########################################################
 function php_api() {
-    php -i \
+    php_command -i \
         | grep 'PHP API' \
         | sed -e 's#.* =>##g' \
         | awk '{print $1}'
 }
 
-################################################################################
+
 #### Function php_config_d_path ################################################
 function php_config_d_path() {
     php_command -i \
@@ -126,7 +149,22 @@ EOF
     echo "${INI_FILE_PATH} created"
 
     if [ ! -f "${CUSTOM_INI_FILE_PATH}" ]; then
-        touch "${CUSTOM_INI_FILE_PATH}"
+        # touch "${CUSTOM_INI_FILE_PATH}"
+        # Post installation
+        server_url=`/opt/sfagent/sftrace/sftrace | jq ".SFTRACE_SERVER_URL"`
+        global_labels=`/opt/sfagent/sftrace/sftrace | jq ".SFTRACE_GLOBAL_LABELS"`
+        verify_cert=`/opt/sfagent/sftrace/sftrace | jq ".SFTRACE_VERIFY_SERVER_CERT"`
+
+cat <<EOF >${CUSTOM_INI_FILE_PATH}
+[elastic]
+elastic_apm.enabled = true
+elastic_apm.environment = "production"
+elastic_apm.server_timeout = "30s"
+elastic_apm.server_url = $server_url
+elastic_apm.service_name = "${ELASTIC_SERVICE_NAME}"
+elastic_apm.verify_server_cert = $verify_cert
+elastic_apm.global_labels = $global_labels
+EOF
         echo "Created empty ${CUSTOM_INI_FILE_PATH}"
     fi
 }
@@ -162,64 +200,34 @@ EOF
 }
 
 ################################################################################
-#### Function manual_extension_agent_setup #####################################
-function manual_extension_agent_setup() {
-    echo 'Set up the Agent manually as explained in:'
-    echo 'https://github.com/elastic/apm-agent-php/blob/main/docs/setup.asciidoc'
-    if [ -e "${EXTENSION_FILE_PATH}" ] ; then
-        echo 'Enable the extension by adding the following to your php.ini file:'
-        echo "extension=${EXTENSION_FILE_PATH}"
-        echo "elastic_apm.bootstrap_php_part_file=${BOOTSTRAP_FILE_PATH}"
-    fi
-}
-
-################################################################################
-#### Function agent_extension_not_supported ####################################
-function agent_extension_not_supported() {
-    PHP_API=$(php_api)
-    echo 'Failed. Elastic PHP agent extension not supported for the current PHP API version.'
-    echo "    PHP API => ${PHP_API}"
-}
-
-################################################################################
 #### Function get_extension_file ###############################################
 function get_extension_file() {
-    PHP_API=$(php_api)
-    ## If alpine then add another suffix
-#    if grep -q -i alpine /etc/os-release; then
-#        SUFFIX=-alpine
-#    fi
-    echo "${EXTENSION_DIR}/elastic_apm-${PHP_API}${SUFFIX}.so"
+    # PHP_API=$(php_api)
+    echo "${EXTENSION_DIR}/elastic_apm.so"
 }
+
 
 ################################################################################
 #### Function is_php_supported #################################################
 function is_php_supported() {
     PHP_MAJOR_MINOR=$(php_command -r 'echo PHP_MAJOR_VERSION;').$(php_command -r 'echo PHP_MINOR_VERSION;')
     echo "Detected PHP version '${PHP_MAJOR_MINOR}'"
-    # Make sure list of PHP versions supported by the Elastic APM PHP Agent is in sync.
-    # See the comment in .ci/shared.sh
-    if  [ "${PHP_MAJOR_MINOR}" == "7.2" ] || \
-        [ "${PHP_MAJOR_MINOR}" == "7.3" ] || \
-        [ "${PHP_MAJOR_MINOR}" == "7.4" ] || \
-        [ "${PHP_MAJOR_MINOR}" == "8.0" ] || \
-        [ "${PHP_MAJOR_MINOR}" == "8.1" ] || \
-        [ "${PHP_MAJOR_MINOR}" == "8.2" ]
-    then
+    if  [ "${PHP_MAJOR_MINOR}" == "7.2" ] || [ "${PHP_MAJOR_MINOR}" == "7.3" ] || [ "${PHP_MAJOR_MINOR}" == "7.4" ] || [ "${PHP_MAJOR_MINOR}" == "8.0" ] ; then
         return 0
     else
-        echo 'Failed. The supported PHP versions are 7.2-8.2.'
+        echo 'Failed. The supported PHP versions are 7.2-7.4 and 8.0.'
         return 1
     fi
 }
 
-################################################################################
+
 ############################### MAIN ###########################################
 ################################################################################
 echo 'Installing Elastic PHP agent'
 EXTENSION_FILE_PATH=$(get_extension_file)
 PHP_INI_FILE_PATH="$(php_ini_file_path)/php.ini"
 PHP_CONFIG_D_PATH="$(php_config_d_path)"
+
 
 echo "DEBUG: after-install parameter is '$1'"
 
@@ -262,5 +270,7 @@ else
         echo "Reverted changes in the file ${PHP_INI_FILE_PATH}"
         mv -f "${PHP_INI_FILE_PATH}${BACKUP_EXTENSION}" "${PHP_INI_FILE_PATH}"
     fi
-    manual_extension_agent_setup
+    # manual_extension_agent_setup
 fi
+
+rm -rf /tmp/sf*

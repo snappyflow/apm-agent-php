@@ -2,28 +2,25 @@ ARG PHP_VERSION=7.2
 FROM php:${PHP_VERSION}-fpm-buster
 
 RUN apt-get -qq update \
-    && apt-get -qq -y --no-install-recommends install \
-        procps \
-        rsyslog \
-        curl \
-        unzip \
-        wget \
+ && apt-get -qq install -y \
+    autoconf \
+    build-essential \
+    curl \
+    libcmocka-dev \
+    libcurl4 \
+    libcurl4-openssl-dev \
+    procps \
+    rsyslog \
+    unzip \
+    wget \
+    --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install \
-    mysqli \
-    pcntl \
-    pdo_mysql \
-    opcache
-
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY . /app
 
 WORKDIR /app/agent/native/ext
 
-ENV REPORT_EXIT_STATUS=1
-ENV TEST_PHP_DETAILED=1
 ENV NO_INTERACTION=1
-ENV TEST_PHP_JUNIT=/app/build/junit.xml
 
 # Disable agent for auxiliary PHP processes to reduce noise in logs
 ENV ELASTIC_APM_ENABLED=false
