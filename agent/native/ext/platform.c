@@ -37,7 +37,6 @@
 #   include <syslog.h>
 #   include <signal.h>
 #   include <errno.h>
-#define __USE_GNU
 #include <dlfcn.h>
 #endif
 
