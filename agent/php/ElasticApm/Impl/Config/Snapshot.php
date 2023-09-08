@@ -315,7 +315,7 @@ final class Snapshot implements LoggableInterface
     /**
      * @return ?array<string|bool|int|float|null>
      */
-    public function globalLabels(): ?array
+    public function globalLabels(): ?string
     {
         return $this->globalLabels;
     }

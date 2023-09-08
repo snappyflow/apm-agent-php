@@ -42,7 +42,7 @@ final class Metadata implements SerializableDataInterface, LoggableInterface
      * 
      * @link https://github.com/elastic/apm-server/blob/v7.2.0/docs/spec/metadata.json#L32C10-L32C16
      */
-    public $labels = null;
+    public $labels;
 
     /**
      * @var ProcessData
@@ -76,7 +76,7 @@ final class Metadata implements SerializableDataInterface, LoggableInterface
         SerializationUtil::addNameValue('process', $this->process, /* ref */ $result);
         SerializationUtil::addNameValue('service', $this->service, /* ref */ $result);
         SerializationUtil::addNameValue('system', $this->system, /* ref */ $result);
-        SerializationUtil::addNameValue('labels', (object)$this->labels, /* ref */ $result);
+        SerializationUtil::addNameValue('labels', $this->labels, /* ref */ $result);
 
         return SerializationUtil::postProcessResult($result);
     }
