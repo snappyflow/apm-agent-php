@@ -18,6 +18,7 @@ elif [ $IS_RHEL == 1 ]; then
     yum install libcurl-devel jq git -y && yum group install "Development Tools"
 fi
 
+rm -rf /opt/elasticapm/phpagent
 
 git clone --branch 4.x --single-branch https://github.com/snappyflow/apm-agent-php.git --depth 1 /opt/elasticapm/phpagent
 
