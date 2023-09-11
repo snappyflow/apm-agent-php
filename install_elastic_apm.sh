@@ -46,7 +46,7 @@ make clean
 make
 # sudo make install
 
-cd ../..
+cd ../../..
 
 cp -rf agent/native/ext/modules/* ${EXTENSION_DIR}
 
