@@ -20,7 +20,7 @@ fi
 
 rm -rf /opt/elasticapm/phpagent
 
-git clone --branch 4.x --single-branch https://github.com/snappyflow/apm-agent-php.git --depth 1 /opt/elasticapm/phpagent
+git clone --branch 1.9x --single-branch https://github.com/snappyflow/apm-agent-php.git --depth 1 /opt/elasticapm/phpagent
 
 cd /opt/elasticapm/phpagent
 
