@@ -32,6 +32,10 @@
 #include "basic_macros.h"
 #include "backend_comm_backoff.h"
 
+// to access env variable
+
+#include <stdlib.h>
+
 #define ELASTIC_APM_CURRENT_LOG_CATEGORY ELASTIC_APM_LOG_CATEGORY_BACKEND_COMM
 
 struct LibCurlInfo
@@ -656,7 +660,37 @@ static void freeDataToSendQueue( DataToSendQueue* dataQueue )
     }
 }
 
-#define ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES (10 * 1024 * 1024)
+// #define ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES (10 * 1024 * 1024)
+
+// snappyflow code
+// to override the internal variable ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES by reading ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES_ENV
+
+#define ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES_ENV "ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES_ENV"
+#define ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES_DEFAULT ( 10 * 1024 * 1024 )
+
+int ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES = ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES_DEFAULT;
+
+// Function to convert environment variable to an integer
+
+
+void setMaxQueueSizeFromEnv()
+{
+    char* envValue = getenv( ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES_ENV );
+    if ( envValue != NULL )
+    {
+        int value = atoi( envValue );
+
+        if ( value > 0 )
+        {
+            ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES = value * 1024 * 1024;
+        }
+    }
+
+    ELASTIC_APM_LOG_INFO(
+            "Queue size : %d"
+            "environment variable: %s",
+            ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES, envValue );
+}
 
 struct BackgroundBackendComm
 {
@@ -1181,6 +1215,18 @@ ResultCode enqueueEventsToSendToApmServer( StringView userAgentHttpHeader, Strin
     BackgroundBackendComm* backgroundBackendComm = g_backgroundBackendComm;
 
     ELASTIC_APM_CALL_IF_FAILED_GOTO( lockMutex( backgroundBackendComm->mutex, &shouldUnlockMutex, __FUNCTION__ ) );
+
+
+     // call to snappyflow code
+
+    setMaxQueueSizeFromEnv();
+
+    ELASTIC_APM_LOG_INFO(
+            "About to send batch of events; total size of queued events: %" PRIu64
+            "queue size : %d",
+            (UInt64) backgroundBackendComm->dataToSendTotalSize,
+            ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES );
+
 
     if ( backgroundBackendComm->dataToSendTotalSize >= ELASTIC_APM_MAX_QUEUE_SIZE_IN_BYTES )
     {
